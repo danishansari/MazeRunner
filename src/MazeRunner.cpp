@@ -10,7 +10,7 @@
 #include <iostream>
 using namespace std;
 
-MazeRunner::MazeRunner(Socket *socket, int numClients)
+MazeRunner::MazeRunner(Socket **socket, int numClients)
 {
     m_socket = socket;
 
@@ -198,10 +198,10 @@ void MazeRunner::displayMaze()
         showMaze();
         for (int i = 0; i < m_numClients; i++)
         {
-            //if (m_socket[i])
+            if (m_socket[i])
             {
                 std::string posStr;
-                int ret = m_socket[i].recv(posStr);
+                int ret = m_socket[i]->recv(posStr);
 
                 if (ret > 0)
                 {
@@ -371,15 +371,15 @@ void MazeRunner::playGame()
 
         for (int i = 0; i < m_numClients; i++)
         {
-            //if (m_socket[i])
+            if (m_socket[i])
             {
-              std::stringstream ss;
-              ss << dir;
-                int ret = m_socket[i].send(ss.str());
+                std::stringstream ss;
+                ss << dir;
+                int ret = m_socket[i]->send(ss.str());
                 if (ret <= 0)
                 {
-                   // m_socket[i];
-                   //m_socket[i] = NULL;
+                    // m_socket[i];
+                    //m_socket[i] = NULL;
                 }
             }
         }

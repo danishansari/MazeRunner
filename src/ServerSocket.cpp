@@ -38,7 +38,7 @@ ServerSocket::~ServerSocket()
 bool ServerSocket::accept()
 {
     // accept connection
-    return Socket::accept(m_socket);
+    return Socket::accept(&m_socket);
 }
 
 /**

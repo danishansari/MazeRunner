@@ -13,10 +13,11 @@
 using namespace std;
 
 Socket *socket_g = NULL;
-Socket *sockConnect_g = NULL;
+Socket **sockConnect_g = NULL;
 
 void* accThreadsFunc(void *ptr);
 
+vector<string> playInfoStrVec_g;
 int* joinedPlayersStatus_g = NULL;
 int joinedPlayersCount_g = 0;
 
@@ -61,8 +62,11 @@ int main(int argc, char**argv)
 
     int connected = 1;
 
-    while (connected)
+    //while (connected)
     {
+        if (!sockConnect_g)
+            sockConnect_g = new Socket*[maxClient];
+
         if (connType == 1)
             socket_g = (Socket *) new ServerSocket(port);
         else
@@ -77,9 +81,6 @@ int main(int argc, char**argv)
                 if (i == 0)
                     cout << "Runner:: Waiting for players.." << endl;
 
-                if (!sockConnect_g)
-                    sockConnect_g = new Socket[maxClient];
-                    
                 pthread_create(&accThreads[i], NULL, accThreadsFunc, (void *)&i);
                 //accThreadsFunc((void*)&i);
                 //usleep(2000000);
@@ -93,7 +94,27 @@ int main(int argc, char**argv)
                     cout << "Runner:: could not connect to: " << ip << endl;
                     connected = 0;
                 }
+                else
+                {
+                    string playerInfoStr = "$"+username+"$"+password+"$"; // add user ip 
+                    sockConnect_g[0] = socket_g;
+
+                    cout << "Sending Player info = " << playerInfoStr << endl;
+                    int ret = sockConnect_g[0]->send(playerInfoStr);
+                    if (ret <= 0)
+                    {
+                        cout << "Could not send data over socket!!" << endl;
+                    }
+                }
             }
+        }
+
+        if (connected)
+        {
+          MazeRunner runner(sockConnect_g, maxClient);
+          //runner.initGame(5);
+          runner.initGame(maxRow);
+          runner.playGame();
         }
 
         if (connType == 1) // server
@@ -105,21 +126,6 @@ int main(int argc, char**argv)
             if (joinedPlayersCount_g == 0)
                 connected = 0;
         }
-        else
-        {
-            joinedPlayersCount_g = maxClient;
-            sockConnect_g = socket_g;
-        }
-
-        if (connected)
-        {
-          MazeRunner runner(sockConnect_g, maxClient);
-          //runner.initGame(5);
-          runner.initGame(maxRow);
-          runner.playGame();
-        }
-
-        break;
     }
 
     cout << "Runner:: You played nice: " << username << endl;
@@ -130,11 +136,21 @@ int main(int argc, char**argv)
 void* accThreadsFunc(void *ptr)
 {
     int threadNo = *(int *)ptr;
+    cout << "Thread no = " << threadNo << endl;
 
-    if (socket_g->accept(*sockConnect_g))
+    sockConnect_g[threadNo] = new Socket;
+
+    if (socket_g->accept(sockConnect_g[threadNo]))
     {
         joinedPlayersStatus_g[threadNo] = 1;
         joinedPlayersCount_g++;
+        string playerInfoStr;
+        int ret = sockConnect_g[threadNo]->recv(playerInfoStr);
+        if (!playerInfoStr.empty())
+        {
+            playInfoStrVec_g.push_back(playerInfoStr);
+            cout << "PlyerInfo: " << playerInfoStr <<  endl;
+        }
     }
     
     return NULL;

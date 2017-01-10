@@ -22,7 +22,7 @@ class MazeRunner
     int m_mazeRow;
     int m_mazeCol;
 
-    Socket *m_socket;
+    Socket **m_socket;
 
     pthread_t m_displayThread;
 
@@ -40,7 +40,7 @@ class MazeRunner
     static void* displayThread(void *ptr);
 
     public:
-        MazeRunner(Socket *socket, int numClients=1);
+        MazeRunner(Socket **socket, int numClients=1);
         ~MazeRunner();
 
         bool initGame(int num);

@@ -119,32 +119,32 @@ bool Socket::listen() const
  *
  * @return: return true on success and false on failure
  */
-bool Socket::accept(Socket &newSock) const
+bool Socket::accept(Socket *newSock) const
 {
     fd_set fd;
     FD_ZERO(&fd);
     FD_SET(m_sockFD, &fd);
 
     struct timeval tv;
-    tv.tv_sec = 5;
+    tv.tv_sec = 10;
     tv.tv_usec = 0;
 
     if (select(m_sockFD+1, &fd, NULL, NULL, &tv) > 0)
     {
         // length of client address
-        socklen_t len = sizeof(newSock);
+        socklen_t len = sizeof(*newSock);
 
         // accept incoming request
-        newSock.m_sockFD = ::accept(m_sockFD, (sockaddr *) &m_addr, &len);
+        newSock->m_sockFD = ::accept(m_sockFD, (sockaddr *) &m_addr, &len);
 
         // set host address
-        newSock.m_addr = m_addr;
+        newSock->m_addr = m_addr;
 
         // check if connection was accepted
-        if (newSock.m_sockFD < 0)
+        if (newSock->m_sockFD < 0)
         {
             fprintf(stderr, "\x1b[32m" "Socket:: could not accept socket: %d\n" "\x1b[0m",
-                    newSock.m_sockFD);
+                    newSock->m_sockFD);
             return false; // return failure
         }
         else

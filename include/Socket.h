@@ -46,7 +46,7 @@ class Socket
         bool listen() const;
 
         // function to accept incoming connection
-        bool accept(Socket &socket) const;
+        bool accept(Socket *socket) const;
 
         // fucntion to connect to the running socket(server)
         bool connect(const std::string host, int port);
