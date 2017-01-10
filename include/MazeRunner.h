@@ -11,10 +11,31 @@
 #define MAX_ROW 1000
 #define MAX_COL 1000
 
+struct PlayerInfo
+{
+    std::string playerName;
+    std::string ip;
+    int currPos;
+    int rank;
+    int id;
+    double currTime;
+
+    PlayerInfo()
+    {
+        playerName = "unknown";
+        ip = "unknown";
+        currPos = -1;
+        rank = -1;
+        id = -1;
+    }
+};
+
 class MazeRunner
 {
     int m_maze[MAX_ROW][MAX_COL];
     int m_showMaze[MAX_ROW][MAX_COL];
+
+    std::vector<PlayerInfo> m_playerInfoVec;
 
     std::vector< std::pair<int, int> > m_spanningTree;
     
@@ -27,7 +48,7 @@ class MazeRunner
     pthread_t m_displayThread;
 
     void displayMaze();
-    int updateMaze(int p);
+    int updateMaze(int p, int id=1);
     void showMaze();
     void generateMaze(int def=0);
 
@@ -43,7 +64,7 @@ class MazeRunner
         MazeRunner(Socket **socket, int numClients=1);
         ~MazeRunner();
 
-        bool initGame(int num);
+        bool initGame(int num, std::vector<PlayerInfo> &playInfo);
         void playGame();
 };
 

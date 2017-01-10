@@ -3,6 +3,7 @@
 #include <vector>
 
 #include <stdlib.h>
+#include <pthread.h>
 
 #include "Socket.h"
 #include "ServerSocket.h"
@@ -10,16 +11,23 @@
 
 #include "MazeRunner.h"
 
+pthread_mutex_t acceptLock_g = PTHREAD_MUTEX_INITIALIZER;
+
 using namespace std;
 
 Socket *socket_g = NULL;
 Socket **sockConnect_g = NULL;
 
 void* accThreadsFunc(void *ptr);
+void parserPlayerInfo(string playerInfoStr, int pos=0);
 
-vector<string> playInfoStrVec_g;
 int* joinedPlayersStatus_g = NULL;
 int joinedPlayersCount_g = 0;
+
+vector<PlayerInfo> playerInfo_g;
+vector<string> playerInfoStrVec_g;
+string gamePassWord_g = "admin";
+
 
 int main(int argc, char**argv)
 {
@@ -44,7 +52,7 @@ int main(int argc, char**argv)
         else if (string(argv[i]) == "-u")
             username = argv[i+1];
         else if (string(argv[i]) == "-pw")
-            password = argv[i+1];
+            gamePassWord_g = argv[i+1];
         else if (string(argv[i]) == "-n")
             maxClient = atoi(argv[i+1]);
         else if (string(argv[i]) == "-r")
@@ -53,9 +61,16 @@ int main(int argc, char**argv)
         {
             connType = 0;
             maxClient = 1;
+            i--;
         }
         else
             cout << "Runner:: Invalid param: " << argv[i] << endl;
+    }
+    
+    if (username == "unknown")
+    {
+        cout << "Provide User Name" << endl;
+        return -1;
     }
 
     joinedPlayersStatus_g = new int[maxClient];
@@ -78,10 +93,12 @@ int main(int argc, char**argv)
         {
             if (connType == 1) // server
             {
+                gamePassWord_g = password;
                 if (i == 0)
                     cout << "Runner:: Waiting for players.." << endl;
-
+                
                 pthread_create(&accThreads[i], NULL, accThreadsFunc, (void *)&i);
+                pthread_join(accThreads[i], NULL);
                 //accThreadsFunc((void*)&i);
                 //usleep(2000000);
             }
@@ -96,14 +113,37 @@ int main(int argc, char**argv)
                 }
                 else
                 {
-                    string playerInfoStr = "$"+username+"$"+password+"$"; // add user ip 
+                    string playerInfoStr = "$"+password+"$"+username+"$"; // add user ip 
                     sockConnect_g[0] = socket_g;
 
-                    cout << "Sending Player info = " << playerInfoStr << endl;
                     int ret = sockConnect_g[0]->send(playerInfoStr);
-                    if (ret <= 0)
+                    if (ret > 0)
                     {
-                        cout << "Could not send data over socket!!" << endl;
+                        int ret = sockConnect_g[0]->recv(playerInfoStr);
+                        cout << "recv = " << playerInfoStr << endl;
+                        if (ret > 0 || playerInfoStr == "connection accepted")
+                        {
+                            while (playerInfoStr != "done")
+                            {
+                                sockConnect_g[0]->recv(playerInfoStr);
+                                cout << "String recv = " << playerInfoStr << endl; 
+                                if (playerInfoStr.length() > 0)
+                                    parserPlayerInfo(playerInfoStr);
+
+                                size_t f = playerInfoStr.find("done");
+                                if (f != string::npos)
+                                    playerInfoStr = "done";
+                            }
+                        }
+                        else
+                        {
+                           cout << "Runner:: Wrong Password!!" << endl;
+                           connected = 0;
+                        }
+                    }
+                    else
+                    {
+                        cout << "Runner:: Could not send data over socket!!" << endl;
                     }
                 }
             }
@@ -111,20 +151,41 @@ int main(int argc, char**argv)
 
         if (connected)
         {
+          cout << "PlayerInfo Size = " << playerInfo_g.size() << endl;
+          string playerInfoStr = "$"+password+"$"+username+"$"; // add user ip 
+          parserPlayerInfo(playerInfoStr, 0);
+
+          if (connType)
+          {    
+            for (int i = 0; i < maxClient; i++)
+            {
+                for (int j = 0; j < playerInfoStrVec_g.size(); j++)
+                {
+
+                    if (i != j)
+                    {
+                        if (sockConnect_g[i])
+                        {
+                            cout << "server: sending : " << playerInfoStrVec_g[i] << endl;
+                            sockConnect_g[i]->send(playerInfoStrVec_g[i]);
+                            usleep(100000);
+                        }
+                    }
+                }
+                    
+                if (sockConnect_g[i])
+                    sockConnect_g[i]->send("done");
+            }
+          }
+
           MazeRunner runner(sockConnect_g, maxClient);
           //runner.initGame(5);
-          runner.initGame(maxRow);
-          runner.playGame();
-        }
-
-        if (connType == 1) // server
-        {
-            for (int i = 0; i < maxClient; i++)
-                pthread_join(accThreads[i], NULL);
-        
-            cout << "Runner:: Total Players Joined = " << joinedPlayersCount_g << endl;
-            if (joinedPlayersCount_g == 0)
-                connected = 0;
+          if (playerInfo_g.size() > 0)
+          {
+              runner.initGame(maxRow, playerInfo_g);
+              runner.playGame();
+          }
+          else cout << "Unexpected error!!" << endl;
         }
     }
 
@@ -148,10 +209,73 @@ void* accThreadsFunc(void *ptr)
         int ret = sockConnect_g[threadNo]->recv(playerInfoStr);
         if (!playerInfoStr.empty())
         {
-            playInfoStrVec_g.push_back(playerInfoStr);
-            cout << "PlyerInfo: " << playerInfoStr <<  endl;
+            size_t passLen = gamePassWord_g.length();
+            if (playerInfoStr.substr(1, passLen) == gamePassWord_g)
+            {
+                int ret = sockConnect_g[threadNo]->send("connection accepted");
+                if (ret > 0)
+                {
+                    //parserAndFillUserInfo(playerInfoStr.substr(passLen));
+                    cout << "PlyerInfo: " << playerInfoStr <<  endl;
+
+                    parserPlayerInfo(playerInfoStr);
+                }
+                else
+                {
+                    delete sockConnect_g[threadNo];
+                    sockConnect_g[threadNo] = NULL;
+                }
+            }
+            else
+            {
+                int ret = sockConnect_g[threadNo]->send("connection refused");
+                if (ret < 0)
+                    cout << "Runner:: connection refused!!" <<  endl;
+
+                delete sockConnect_g[threadNo];
+                sockConnect_g[threadNo] = NULL;
+            }
         }
     }
     
     return NULL;
+}
+
+void parserPlayerInfo(string playerInfoStr, int pos)
+{
+    string tmpStr = playerInfoStr;
+
+    size_t foundPos = 0;
+
+    PlayerInfo pInfo;
+
+    vector<string> parsedStringVec;
+
+    while(tmpStr.length() > 0 && 
+        (foundPos = tmpStr.find_last_of("$")) != string::npos)
+    {
+        tmpStr.erase(foundPos);
+
+        foundPos = tmpStr.find_last_of("$");
+
+        if (foundPos != string::npos)
+        {
+            parsedStringVec.push_back(tmpStr.substr(foundPos+1));
+            tmpStr = tmpStr.substr(0, foundPos+1);
+        }
+    }
+
+    if (parsedStringVec.size() > 1)
+    {
+        pInfo.playerName = parsedStringVec[1];
+
+        playerInfo_g.push_back(pInfo);
+        cout << "pushing: " << playerInfoStr << endl;
+        if (pos)
+            playerInfoStrVec_g.insert(playerInfoStrVec_g.begin(), playerInfoStr);
+        else
+            playerInfoStrVec_g.push_back(playerInfoStr);
+    }
+    else
+        cout << "empty string!!" << endl;
 }

@@ -1,4 +1,5 @@
 #include "MazeRunner.h"
+#include "terminos.h"
 
 #include <sstream>
 #include <fstream>
@@ -9,6 +10,8 @@
 
 #include <iostream>
 using namespace std;
+
+string COL_g[] = { "\x1B[0m", "\x1B[31m", "\x1B[32m", "\x1B[33m", "\x1B[34m", "\x1B[35m", "\x1B[36m", "\x1B[37m" };
 
 MazeRunner::MazeRunner(Socket **socket, int numClients)
 {
@@ -23,7 +26,7 @@ MazeRunner::MazeRunner(Socket **socket, int numClients)
 MazeRunner::~MazeRunner()
 { }
 
-bool MazeRunner::initGame(int num)
+bool MazeRunner::initGame(int num, vector<PlayerInfo> &playInfo)
 {
     if (!m_socket)
         return false;
@@ -38,7 +41,15 @@ bool MazeRunner::initGame(int num)
 
         for (int i = 0; i <nVertices; i++)
             for (int j = 0; j < nVertices; j++)
-                m_maze[i][j] = 0;
+                m_maze[i][j] = -1;
+
+        m_playerInfoVec = playInfo;
+
+        for (int i = 0; i < m_playerInfoVec.size(); i++)
+        {
+            m_playerInfoVec[i].id = i+1;
+            m_playerInfoVec[i].currPos = (m_mazeRow*m_mazeCol*4-1)+2*m_mazeCol;
+        }
     }
     else
         return false;
@@ -56,85 +67,35 @@ bool MazeRunner::isInsideMaze()
   return true;
 }
 
-int MazeRunner::findMinVertex(int *row, std::vector<int> &visited)
-{
-    int min = 9999;
-    int minVer = -1;
-    
-    for (int i = 0; i < m_mazeRow*m_mazeCol; i++)
-    {
-        if (row[i])
-        {
-            if (row[i] < min && std::find(visited.begin(), visited.end(), i) == visited.end())
-            {
-                min = row[i];
-                minVer = i;
-            }
-        }
-    }
-
-    //cout << "minVer = " << minVer << endl;
-    return minVer;
-}
-
-void MazeRunner::primsMinSpanningTree()
-{
-    int nVertices = m_mazeRow*m_mazeCol;
-
-    std::vector<int> parent;
-    std::vector<int> visitedVertices;
-
-    int currVextex = 0;
-    int minVertex = currVextex;
-    visitedVertices.push_back(currVextex);
-
-    int backTrace = -1; 
-
-    while (visitedVertices.size() < nVertices)
-    {
-        minVertex = findMinVertex(m_maze[currVextex], visitedVertices);
-        
-        if (minVertex == -1)
-        {
-            if (backTrace == -1)
-                backTrace = parent.size();
-
-            backTrace --;
-            currVextex = visitedVertices[backTrace];
-        }
-        else
-        {
-            m_spanningTree.push_back(std::pair<int,int>(currVextex+1, minVertex+1));
-            //cout << "Edge added = " << currVextex+1 << " -> " << minVertex+1 << endl;
-            currVextex = minVertex;
-            visitedVertices.push_back(currVextex);
-            parent.push_back(currVextex);
-            
-            backTrace = -1;
-        }
-        //cout << "visited = ";
-        //for (int i = 0; i < visitedVertices.size(); i++)
-        //    cout << visitedVertices[i] <<"  " ;
-        //cout << endl;
-        //usleep(1000000);
-    }
-
-    //cout << "Visited Vertices size = " << visitedVertices.size() << endl;
-}
-
 void MazeRunner::showMaze()
 {
     //system("clear");
 
     const char heart[] = "\xe2\x99\xa5";
 
+    //cout << "Row = " << 2*m_mazeRow+1 << " col = " << 2*m_mazeCol+1 << endl;
+
     for (int i = 0; i < 2*m_mazeRow+1; i++)
     {
         for (int j = 0; j < 2*m_mazeCol+1; j++)
         {
-            if (m_maze[i][j])
-                printf("  ");
-            else
+            int playerFound = 0;
+
+            if (m_maze[i][j] == 0)
+            {
+                for (int m = 0; m < m_playerInfoVec.size(); m++)
+                {
+                    if (((i*j)-1+(2*j)) == m_playerInfoVec[m].currPos)
+                    {
+                        printf("%s %c%s\b\b", COL_g[m+1].c_str(), heart, COL_g[0].c_str());
+                        playerFound = 1;
+                    }
+                }
+
+                if (!playerFound)
+                    printf("  ");
+            }
+            else 
                 printf("[]", i*m_mazeRow+j);
         }
         printf("\n");
@@ -196,6 +157,7 @@ void MazeRunner::displayMaze()
     while (isAlive() && isInsideMaze())
     {
         showMaze();
+
         for (int i = 0; i < m_numClients; i++)
         {
             if (m_socket[i])
@@ -207,18 +169,38 @@ void MazeRunner::displayMaze()
                 {
                     int pos = atoi(posStr.c_str());
                     printf("Maze:: Pos = %d\n", pos); 
-                    updateMaze(pos);
+                    updateMaze(pos, i+1);
                 }
             }
         }
+        
+        usleep(10000);
 
         break;
     }
 }
 
-int MazeRunner::updateMaze(int pos)
+int MazeRunner::updateMaze(int dir, int playerId)
 {
-  return 0;
+  int ret = 0;
+
+  if (m_playerInfoVec.size() < playerId)
+  {
+    int x = m_playerInfoVec[playerId].currPos/(m_mazeRow*m_mazeCol*4-1);
+    int y = m_playerInfoVec[playerId].currPos%(m_mazeCol*2);
+   
+    if (abs(dir) % 2)
+        x += dir;
+    else
+        y += (dir/2);
+
+    m_playerInfoVec[playerId].currPos = x*y*4-1+y*2;
+    ret = 1;
+  }
+
+  showMaze();
+
+  return ret;
 }
 
 void* MazeRunner::displayThread(void *ptr)
@@ -242,7 +224,6 @@ void MazeRunner::generateMaze(int def)
         if (i+m_mazeCol < (nVertices))
         {
             m_maze[i][i+m_mazeCol] = (rand()%10)+1;
-            //cout << "* (" << i << " " << m_mazeCol << ") = " << m_maze[i][i+m_mazeCol] << endl;
             m_maze[i+m_mazeCol][i] = m_maze[i][i+m_mazeCol];
         }
     }
@@ -253,32 +234,22 @@ void MazeRunner::generateMaze(int def)
     {
         for (int j = 0; j < 2*m_mazeCol+1; j++)
         {
-            m_maze[i][j] = 0;
+            m_maze[i][j] = -1;
         }
     }
-    //cout << "Map size = " << m_spanningTree.size() << endl;
+    
+    m_maze[0][1] = m_maze[m_mazeRow*2-1][m_mazeCol*2] = 0;
+
     std::vector< pair<int, int> >::iterator it = m_spanningTree.begin();
-    //for (it=m_spanningTree.begin(); it!=m_spanningTree.end(); ++it)
-    //    cout << "(" << it->first << " -> " << it->second <<") ";
-    //cout << endl;
-    //cout << "=================================" << endl;
-     
+    
     for (it=m_spanningTree.begin(); it!=m_spanningTree.end(); ++it)
     {
-        //std::map<int, int>::iterator it1 = it;
-        //for (it1=m_spanningTree.begin(); it1!=m_spanningTree.end(); ++it1)
-        //    cout << "(" << it1->first << " -> " << it1->second <<") ";
-        //cout << endl;
-        //cout << "=================================" << endl;
-
         int x1 = -1; 
         int y1 = -1;
         int x2 = -1;
         int y2 = -1;        
 
         int dir = 0;
-
-        //cout << "*path = " << it->first << " " <<  it->second << " row = " << m_mazeRow << endl; 
 
         if (it->first < it->second)
         {
@@ -308,7 +279,6 @@ void MazeRunner::generateMaze(int def)
 
                 dir = 1;
             }
-            //cout << "if " << x1 << " " << y1 << " :: " << x2 << " " << y2 << endl;
         }
         else
         {
@@ -338,21 +308,15 @@ void MazeRunner::generateMaze(int def)
 
                 dir = 1;
             }
-            //cout << "elif " << x1 << " " << y1 << " :: " << x2 << " " << y2 << endl;
         }
 
         for (int j = y1; j <= y2; j++)
         {
-            //cout << "######### " << x1 << " " << j << endl;
             if (dir == 2)
-                m_maze[j][x1] = 1;
+                m_maze[j][x1] = 0;
             else
-                m_maze[x1][j] = 1;
+                m_maze[x1][j] = 0;
         }
-
-        //showMaze();
-        //int p;
-        //cin >> p;
     }
 }
 
@@ -366,7 +330,29 @@ void MazeRunner::playGame()
 
     while (isAlive() && isInsideMaze())
     {
-        //scanf("%d", &dir);
+
+        if (getch() == '\033') { // if the first value is esc
+            getch(); // skip the [
+            switch(getch()) { // the real value
+                case 'A':
+                    // code for arrow up
+                    dir = 1;
+                    break;
+                case 'B':
+                    // code for arrow down
+                    dir = -1;
+                    break;
+                case 'C':
+                    // code for arrow right
+                    dir = 2;
+                    break;
+                case 'D':
+                    // code for arrow left
+                    dir = -2;
+                    break;
+            }
+        }
+        cout << "Dir = " << dir << endl;
         updateMaze(dir);
 
         for (int i = 0; i < m_numClients; i++)
@@ -378,8 +364,8 @@ void MazeRunner::playGame()
                 int ret = m_socket[i]->send(ss.str());
                 if (ret <= 0)
                 {
-                    // m_socket[i];
-                    //m_socket[i] = NULL;
+                     m_socket[i];
+                    m_socket[i] = NULL;
                 }
             }
         }
@@ -389,4 +375,64 @@ void MazeRunner::playGame()
     }
 
     pthread_join(m_displayThread, NULL);
+}
+
+int MazeRunner::findMinVertex(int *row, std::vector<int> &visited)
+{
+    int min = 9999;
+    int minVer = -1;
+    
+    for (int i = 0; i < m_mazeRow*m_mazeCol; i++)
+    {
+        if (row[i] != -1)
+        {
+            if (row[i] < min && std::find(visited.begin(), visited.end(), i) == visited.end())
+            {
+                min = row[i];
+                minVer = i;
+            }
+        }
+    }
+
+    //cout << "minVer = " << minVer << endl;
+    return minVer;
+}
+
+void MazeRunner::primsMinSpanningTree()
+{
+    int nVertices = m_mazeRow*m_mazeCol;
+
+    std::vector<int> parent;
+    std::vector<int> visitedVertices;
+
+    int currVextex = 0;
+    int minVertex = currVextex;
+    visitedVertices.push_back(currVextex);
+
+    int backTrace = -1; 
+
+    while (visitedVertices.size() < nVertices)
+    {
+        minVertex = findMinVertex(m_maze[currVextex], visitedVertices);
+        
+        if (minVertex == -1)
+        {
+            if (backTrace == -1)
+                backTrace = parent.size();
+
+            backTrace --;
+            currVextex = visitedVertices[backTrace];
+        }
+        else
+        {
+            m_spanningTree.push_back(std::pair<int,int>(currVextex+1, minVertex+1));
+
+            currVextex = minVertex;
+
+            visitedVertices.push_back(currVextex);
+            parent.push_back(currVextex);
+            
+            backTrace = -1;
+        }
+    }
 }
