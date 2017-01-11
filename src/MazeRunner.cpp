@@ -48,7 +48,8 @@ bool MazeRunner::initGame(int num, vector<PlayerInfo> &playInfo)
         for (int i = 0; i < m_playerInfoVec.size(); i++)
         {
             m_playerInfoVec[i].id = i+1;
-            m_playerInfoVec[i].currPos = (m_mazeRow*m_mazeCol*4-1)+2*m_mazeCol;
+            m_playerInfoVec[i].currPos = (m_mazeRow*m_mazeCol*4)+2*(m_mazeCol)-1;
+            cout << "Init:: Player # " << i << " " << m_playerInfoVec[i].playerName << " pos = " << m_playerInfoVec[i].currPos << endl;
         }
     }
     else
@@ -73,7 +74,10 @@ void MazeRunner::showMaze()
 
     const char heart[] = "\xe2\x99\xa5";
 
-    //cout << "Row = " << 2*m_mazeRow+1 << " col = " << 2*m_mazeCol+1 << endl;
+    for (int i = 0; i < m_playerInfoVec.size(); i++)
+    {
+        cout << "Player # " << i << " pos = " << m_playerInfoVec[i].currPos << endl;
+    }
 
     for (int i = 0; i < 2*m_mazeRow+1; i++)
     {
@@ -81,14 +85,20 @@ void MazeRunner::showMaze()
         {
             int playerFound = 0;
 
+            //cout << "i = " << i << " j = " << j << " : " << (i*(2*m_mazeRow+1))+(j) << endl;;
             if (m_maze[i][j] == 0)
             {
-                for (int m = 0; m < m_playerInfoVec.size(); m++)
+                for (int m = m_playerInfoVec.size()-1; m > 0; m--)
                 {
-                    if (((i*j)-1+(2*j)) == m_playerInfoVec[m].currPos)
+                    if (((i*(2*m_mazeRow+1))+(j)) == abs(m_playerInfoVec[m].currPos))
                     {
-                        printf("%s %c%s\b\b", COL_g[m+1].c_str(), heart, COL_g[0].c_str());
+                        if (m_playerInfoVec[m].currPos > 0)
+                            printf("%s *%s", COL_g[m+1].c_str(), COL_g[0].c_str());
+                        else
+                            printf("%s*%s", COL_g[m+1].c_str(), COL_g[0].c_str());
+
                         playerFound = 1;
+                        break;
                     }
                 }
 
@@ -100,6 +110,15 @@ void MazeRunner::showMaze()
         }
         printf("\n");
     }
+
+    //for (int i = 0; i < 2*m_mazeRow+1; i++)
+    //{
+    //    for (int j = 0; j < 2*m_mazeCol+1; j++)
+    //    {
+    //        cout << i*(2*m_mazeRow+1)+j <<" "; 
+    //    }
+    //    cout << endl;
+    //}
 
 
 #if 0
@@ -169,34 +188,62 @@ void MazeRunner::displayMaze()
                 {
                     int pos = atoi(posStr.c_str());
                     printf("Maze:: Pos = %d\n", pos); 
-                    updateMaze(pos, i+1);
+                    updateMaze(pos, i);
                 }
             }
         }
         
         usleep(10000);
 
-        break;
+        //break;
     }
 }
 
 int MazeRunner::updateMaze(int dir, int playerId)
 {
   int ret = 0;
+  cout << "Update Maze with " << dir << " for " << playerId << " vec size = "<< m_playerInfoVec.size() << endl;
 
-  if (m_playerInfoVec.size() < playerId)
+  static int prevDir = dir;
+
+  if (playerId < m_playerInfoVec.size())
   {
-    int x = m_playerInfoVec[playerId].currPos/(m_mazeRow*m_mazeCol*4-1);
-    int y = m_playerInfoVec[playerId].currPos%(m_mazeCol*2);
-   
+    int x = abs(m_playerInfoVec[playerId].currPos)/(m_mazeRow*2);
+    int y = abs(m_playerInfoVec[playerId].currPos)%(m_mazeCol*2);
+  
+    cout << m_playerInfoVec[playerId].currPos << " decompsed = (" << x << ", "<< y << ")" << endl;
+
     if (abs(dir) % 2)
         x += dir;
     else
         y += (dir/2);
 
-    m_playerInfoVec[playerId].currPos = x*y*4-1+y*2;
-    ret = 1;
+    cout << "compose = (" << x << ", "<< y << ") = " << x*(2*m_mazeRow)+y << " d = " << dir * prevDir << endl;
+
+    int newPos = x*(2*m_mazeRow)+y;
+
+    if (y > -1 && newPos > 0 && newPos < 110)
+    {
+        if ((m_playerInfoVec[playerId].currPos < 0 && dir < 0)|| (m_playerInfoVec[playerId].currPos > 0 && 
+            (dir*prevDir < 0 || dir > 0)))
+        {
+            m_playerInfoVec[playerId].currPos = x*(2*m_mazeRow)+y;
+            cout << "m_playerInfoVec["<< playerId << "].currPos = " << m_playerInfoVec[playerId].currPos << endl;
+            if (dir > 0)
+                m_playerInfoVec[playerId].currPos *= -1;
+
+            ret = 1;
+        }
+        else
+            m_playerInfoVec[playerId].currPos *= -1;
+    }
+    else
+        m_playerInfoVec[playerId].currPos *= -1;
+
+    prevDir = dir;
   }
+  else
+      cout << "Runner:: invalid player request!!" << endl;
 
   showMaze();
 
@@ -336,11 +383,11 @@ void MazeRunner::playGame()
             switch(getch()) { // the real value
                 case 'A':
                     // code for arrow up
-                    dir = 1;
+                    dir = -1;
                     break;
                 case 'B':
                     // code for arrow down
-                    dir = -1;
+                    dir = 1;
                     break;
                 case 'C':
                     // code for arrow right
@@ -371,7 +418,7 @@ void MazeRunner::playGame()
         }
 
         usleep(10000);
-        break;
+        //break;
     }
 
     pthread_join(m_displayThread, NULL);

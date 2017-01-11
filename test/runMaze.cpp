@@ -153,7 +153,7 @@ int main(int argc, char**argv)
         {
           cout << "PlayerInfo Size = " << playerInfo_g.size() << endl;
           string playerInfoStr = "$"+password+"$"+username+"$"; // add user ip 
-          parserPlayerInfo(playerInfoStr, 0);
+          parserPlayerInfo(playerInfoStr, 1);
 
           if (connType)
           {    
@@ -182,6 +182,8 @@ int main(int argc, char**argv)
           //runner.initGame(5);
           if (playerInfo_g.size() > 0)
           {
+              for (int i = 0; i < playerInfo_g.size(); i++)
+                  cout << i << " # " << playerInfo_g[i].playerName << endl;
               runner.initGame(maxRow, playerInfo_g);
               runner.playGame();
           }
@@ -267,10 +269,10 @@ void parserPlayerInfo(string playerInfoStr, int pos)
 
     if (parsedStringVec.size() > 1)
     {
-        pInfo.playerName = parsedStringVec[1];
+        pInfo.playerName = parsedStringVec[0];
 
         playerInfo_g.push_back(pInfo);
-        cout << "pushing: " << playerInfoStr << endl;
+        cout << pos << " # pushing: " << playerInfoStr << endl;
         if (pos)
             playerInfoStrVec_g.insert(playerInfoStrVec_g.begin(), playerInfoStr);
         else
