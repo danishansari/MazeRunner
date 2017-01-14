@@ -48,7 +48,7 @@ bool MazeRunner::initGame(int num, vector<PlayerInfo> &playInfo)
         for (int i = 0; i < m_playerInfoVec.size(); i++)
         {
             m_playerInfoVec[i].id = i+1;
-            m_playerInfoVec[i].currPos = (m_mazeRow*m_mazeCol*4)+2*(m_mazeCol)-1;
+            m_playerInfoVec[i].currPos = (2*m_mazeRow+1)*(2*m_mazeRow-1)+(2*m_mazeCol);
             cout << "Init:: Player # " << i << " " << m_playerInfoVec[i].playerName << " pos = " << m_playerInfoVec[i].currPos << endl;
         }
     }
@@ -83,6 +83,16 @@ void MazeRunner::showMaze()
     {
         for (int j = 0; j < 2*m_mazeCol+1; j++)
         {
+            cout << m_maze[i][j] << "(" << (i*(2*m_mazeRow+1))+(j) << ") " ;
+        }
+        cout << endl;
+    }
+    cout << "==================================" << endl;
+
+    for (int i = 0; i < 2*m_mazeRow+1; i++)
+    {
+        for (int j = 0; j < 2*m_mazeCol+1; j++)
+        {
             int playerFound = 0;
 
             //cout << "i = " << i << " j = " << j << " : " << (i*(2*m_mazeRow+1))+(j) << endl;;
@@ -105,7 +115,7 @@ void MazeRunner::showMaze()
                 if (!playerFound)
                     printf("  ");
             }
-            else 
+            else
                 printf("[]", i*m_mazeRow+j);
         }
         printf("\n");
@@ -218,11 +228,11 @@ int MazeRunner::updateMaze(int dir, int playerId)
     else
         y += (dir/2);
 
-    cout << "compose = (" << x << ", "<< y << ") = " << x*(2*m_mazeRow)+y << " d = " << dir * prevDir << endl;
+    cout << "compose = (" << x << ", "<< y << ") = " << x*(2*m_mazeRow+1)+y << " d = " << dir * prevDir << endl;
 
     int newPos = x*(2*m_mazeRow)+y;
 
-    if (y > -1 && newPos > 0 && newPos < 110)
+    if (y > -1 && newPos > 0 && newPos < (4*m_mazeRow*(m_mazeCol-1)))
     {
         if ((m_playerInfoVec[playerId].currPos < 0 && dir < 0)|| (m_playerInfoVec[playerId].currPos > 0 && 
             (dir*prevDir < 0 || dir > 0)))
