@@ -79,14 +79,14 @@ void MazeRunner::showMaze()
         cout << "Player # " << i << " pos = " << m_playerInfoVec[i].currPos << endl;
     }
 
-    for (int i = 0; i < 2*m_mazeRow+1; i++)
-    {
-        for (int j = 0; j < 2*m_mazeCol+1; j++)
-        {
-            cout << m_maze[i][j] << "(" << (i*(2*m_mazeRow+1))+(j) << ") " ;
-        }
-        cout << endl;
-    }
+    //for (int i = 0; i < 2*m_mazeRow+1; i++)
+    //{
+    //    for (int j = 0; j < 2*m_mazeCol+1; j++)
+    //    {
+    //        cout << m_maze[i][j] << "(" << (i*(2*m_mazeRow+1))+(j) << ") " ;
+    //    }
+    //    cout << endl;
+    //}
     cout << "==================================" << endl;
 
     for (int i = 0; i < 2*m_mazeRow+1; i++)
@@ -98,17 +98,24 @@ void MazeRunner::showMaze()
             //cout << "i = " << i << " j = " << j << " : " << (i*(2*m_mazeRow+1))+(j) << endl;;
             if (m_maze[i][j] == 0)
             {
-                for (int m = m_playerInfoVec.size()-1; m > 0; m--)
+                for (int m = 0; m < m_playerInfoVec.size(); m++)
                 {
-                    if (((i*(2*m_mazeRow+1))+(j)) == abs(m_playerInfoVec[m].currPos))
+                    if (playerFound != abs(m_playerInfoVec[m].currPos) && 
+                        ((i*(2*m_mazeRow+1))+(j)) == abs(m_playerInfoVec[m].currPos))
                     {
-                        if (m_playerInfoVec[m].currPos > 0)
+                        if (abs(m_playerInfoVec[m].currPos) != (((2*m_mazeRow)+1)*((2*m_mazeCol)-1)+2*m_mazeCol) &&
+                            (m > 0 && abs(m_playerInfoVec[m].currPos) == abs(m_playerInfoVec[m-1].currPos) ||
+                            m < m_playerInfoVec.size()-1 && abs(m_playerInfoVec[m].currPos) == abs(m_playerInfoVec[m+1].currPos)))
+                        {
+                            printf("%s*%s", COL_g[m+1].c_str(), COL_g[0].c_str());
+                        }
+                        else if (m_playerInfoVec[m].currPos > 0)
                             printf("%s *%s", COL_g[m+1].c_str(), COL_g[0].c_str());
                         else
-                            printf("%s*%s", COL_g[m+1].c_str(), COL_g[0].c_str());
+                            printf("%s* %s", COL_g[m+1].c_str(), COL_g[0].c_str());
 
-                        playerFound = 1;
-                        break;
+                        playerFound = abs(m_playerInfoVec[m].currPos);
+                        //break;
                     }
                 }
 
@@ -218,8 +225,8 @@ int MazeRunner::updateMaze(int dir, int playerId)
 
   if (playerId < m_playerInfoVec.size())
   {
-    int x = abs(m_playerInfoVec[playerId].currPos)/(m_mazeRow*2);
-    int y = abs(m_playerInfoVec[playerId].currPos)%(m_mazeCol*2);
+    int x = abs(m_playerInfoVec[playerId].currPos)/(m_mazeRow*2+1);
+    int y = abs(m_playerInfoVec[playerId].currPos)%(m_mazeCol*2+1);
   
     cout << m_playerInfoVec[playerId].currPos << " decompsed = (" << x << ", "<< y << ")" << endl;
 
@@ -228,18 +235,21 @@ int MazeRunner::updateMaze(int dir, int playerId)
     else
         y += (dir/2);
 
-    cout << "compose = (" << x << ", "<< y << ") = " << x*(2*m_mazeRow+1)+y << " d = " << dir * prevDir << endl;
+    int newPos = x*(2*m_mazeRow+1)+y;
 
-    int newPos = x*(2*m_mazeRow)+y;
+    cout << "compose = (" << x << ", "<< y << ") = " << newPos << " d = " << dir * prevDir << endl;
 
-    if (y > -1 && newPos > 0 && newPos < (4*m_mazeRow*(m_mazeCol-1)))
+
+    if (y > 0 && newPos > 0 && !m_maze[x][y] && 
+        newPos < (((2*m_mazeRow)+1)*((2*m_mazeCol))))
     {
+        cout << "1st if passed------------------------- " << endl;
         if ((m_playerInfoVec[playerId].currPos < 0 && dir < 0)|| (m_playerInfoVec[playerId].currPos > 0 && 
-            (dir*prevDir < 0 || dir > 0)))
+                    (dir*prevDir < 0 || dir > 0 || dir%2)))
         {
-            m_playerInfoVec[playerId].currPos = x*(2*m_mazeRow)+y;
+            m_playerInfoVec[playerId].currPos = newPos;
             cout << "m_playerInfoVec["<< playerId << "].currPos = " << m_playerInfoVec[playerId].currPos << endl;
-            if (dir > 0)
+            if (dir == 2)
                 m_playerInfoVec[playerId].currPos *= -1;
 
             ret = 1;
@@ -248,7 +258,10 @@ int MazeRunner::updateMaze(int dir, int playerId)
             m_playerInfoVec[playerId].currPos *= -1;
     }
     else
+    {
+        cout << "1st if failed: " << y << " " << newPos << " " << (4*m_mazeRow*(m_mazeCol)-1) << endl;
         m_playerInfoVec[playerId].currPos *= -1;
+    }
 
     prevDir = dir;
   }

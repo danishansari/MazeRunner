@@ -166,8 +166,8 @@ int main(int argc, char**argv)
                     {
                         if (sockConnect_g[i])
                         {
-                            cout << "server: sending : " << playerInfoStrVec_g[i] << endl;
-                            sockConnect_g[i]->send(playerInfoStrVec_g[i]);
+                            cout << "server: sending : " << playerInfoStrVec_g[j] << endl;
+                            sockConnect_g[i]->send(playerInfoStrVec_g[j]);
                             usleep(100000);
                         }
                     }
