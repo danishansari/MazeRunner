@@ -45,7 +45,7 @@ bool MazeRunner::initGame(int num, vector<PlayerInfo> &playInfo)
 
         m_playerInfoVec = playInfo;
 
-        for (int i = 0; i < m_playerInfoVec.size(); i++)
+        for (int i = 0; i < (int)m_playerInfoVec.size(); i++)
         {
             m_playerInfoVec[i].id = i+1;
             m_playerInfoVec[i].currPos = (2*m_mazeRow+1)*(2*m_mazeRow-1)+(2*m_mazeCol);
@@ -58,26 +58,24 @@ bool MazeRunner::initGame(int num, vector<PlayerInfo> &playInfo)
     return true;
 }
 
-bool MazeRunner::isAlive()
+bool MazeRunner::isAlive(int id)
 {
   return true;
 }
 
-bool MazeRunner::isInsideMaze()
+bool MazeRunner::isInsideMaze(int id)
 {
-  return true;
+  return (m_playerInfoVec[id].currPos != 1);
 }
 
 void MazeRunner::showMaze()
 {
-    //system("clear");
+    system("clear");
 
-    const char heart[] = "\xe2\x99\xa5";
+    //const char heart[] = "\xe2\x99\xa5";
 
-    for (int i = 0; i < m_playerInfoVec.size(); i++)
-    {
-        cout << "Player # " << i << " pos = " << m_playerInfoVec[i].currPos << endl;
-    }
+    for (int i = 0; i < (int)m_playerInfoVec.size(); i++)
+        cout << "> Player # " << i << " " << COL_g[i+1] << m_playerInfoVec[i].playerName << COL_g[0]<< endl;
 
     //for (int i = 0; i < 2*m_mazeRow+1; i++)
     //{
@@ -98,16 +96,16 @@ void MazeRunner::showMaze()
             //cout << "i = " << i << " j = " << j << " : " << (i*(2*m_mazeRow+1))+(j) << endl;;
             if (m_maze[i][j] == 0)
             {
-                for (int m = 0; m < m_playerInfoVec.size(); m++)
+                for (int m = 0; m < (int)m_playerInfoVec.size(); m++)
                 {
                     if (playerFound != abs(m_playerInfoVec[m].currPos) && 
                         ((i*(2*m_mazeRow+1))+(j)) == abs(m_playerInfoVec[m].currPos))
                     {
                         if (abs(m_playerInfoVec[m].currPos) != (((2*m_mazeRow)+1)*((2*m_mazeCol)-1)+2*m_mazeCol) &&
-                            (m > 0 && abs(m_playerInfoVec[m].currPos) == abs(m_playerInfoVec[m-1].currPos) ||
-                            m < m_playerInfoVec.size()-1 && abs(m_playerInfoVec[m].currPos) == abs(m_playerInfoVec[m+1].currPos)))
+                            ((m > 0 && abs(m_playerInfoVec[m].currPos) == abs(m_playerInfoVec[m-1].currPos)) ||
+                            (m < (int)m_playerInfoVec.size()-1 && abs(m_playerInfoVec[m].currPos)) == abs(m_playerInfoVec[m+1].currPos)))
                         {
-                            printf("%s*%s", COL_g[m+1].c_str(), COL_g[0].c_str());
+                            printf("%s* %s", COL_g[m+1].c_str(), COL_g[0].c_str());
                         }
                         else if (m_playerInfoVec[m].currPos > 0)
                             printf("%s *%s", COL_g[m+1].c_str(), COL_g[0].c_str());
@@ -123,7 +121,7 @@ void MazeRunner::showMaze()
                     printf("  ");
             }
             else
-                printf("[]", i*m_mazeRow+j);
+                printf("[]");
         }
         printf("\n");
     }
@@ -223,7 +221,7 @@ int MazeRunner::updateMaze(int dir, int playerId)
 
   static int prevDir = dir;
 
-  if (playerId < m_playerInfoVec.size())
+  if (playerId < (int)m_playerInfoVec.size())
   {
     int x = abs(m_playerInfoVec[playerId].currPos)/(m_mazeRow*2+1);
     int y = abs(m_playerInfoVec[playerId].currPos)%(m_mazeCol*2+1);
@@ -316,7 +314,7 @@ void MazeRunner::generateMaze(int def)
     {
         int x1 = -1; 
         int y1 = -1;
-        int x2 = -1;
+        //int x2 = -1;
         int y2 = -1;        
 
         int dir = 0;
@@ -434,7 +432,7 @@ void MazeRunner::playGame()
                 int ret = m_socket[i]->send(ss.str());
                 if (ret <= 0)
                 {
-                     m_socket[i];
+                    delete m_socket[i];
                     m_socket[i] = NULL;
                 }
             }
@@ -481,7 +479,7 @@ void MazeRunner::primsMinSpanningTree()
 
     int backTrace = -1; 
 
-    while (visitedVertices.size() < nVertices)
+    while ((int)visitedVertices.size() < nVertices)
     {
         minVertex = findMinVertex(m_maze[currVextex], visitedVertices);
         

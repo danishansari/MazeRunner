@@ -4,6 +4,7 @@
 
 #include <stdlib.h>
 #include <pthread.h>
+#include <sys/time.h>
 
 #include "Socket.h"
 #include "ServerSocket.h"
@@ -24,6 +25,8 @@ void parserPlayerInfo(string playerInfoStr, int pos=0);
 int* joinedPlayersStatus_g = NULL;
 int joinedPlayersCount_g = 0;
 
+double waitForConn_g = 10.0;
+
 vector<PlayerInfo> playerInfo_g;
 vector<string> playerInfoStrVec_g;
 string gamePassWord_g = "admin";
@@ -37,7 +40,7 @@ int main(int argc, char**argv)
     string password = "admin";
     int maxClient = 3;
     int connType = 1;
-    int maxRow = 5;
+    int maxRow = 15;
 
     for (int i = 1; i < argc; i+=2)
     {
@@ -55,7 +58,7 @@ int main(int argc, char**argv)
             gamePassWord_g = argv[i+1];
         else if (string(argv[i]) == "-n")
             maxClient = atoi(argv[i+1]);
-        else if (string(argv[i]) == "-r")
+        else if (string(argv[i]) == "-r" && username == "superuser")
             maxRow = atoi(argv[i+1]);
         else if (string(argv[i]) == "-c")
         {
@@ -89,18 +92,24 @@ int main(int argc, char**argv)
 
         pthread_t accThreads[maxClient];
 
+        struct timeval tv_start, tv_end;
+
         for (int i = 0; i < maxClient; i++)
         {
             if (connType == 1) // server
             {
                 gamePassWord_g = password;
+
                 if (i == 0)
                     cout << "Runner:: Waiting for players.." << endl;
-                
+               
+                gettimeofday(&tv_start, NULL);
+
                 pthread_create(&accThreads[i], NULL, accThreadsFunc, (void *)&i);
                 pthread_join(accThreads[i], NULL);
-                //accThreadsFunc((void*)&i);
-                //usleep(2000000);
+
+                gettimeofday(&tv_end, NULL);
+                waitForConn_g -= (tv_end.tv_sec - tv_start.tv_sec)+1;
             }
             else // client
             {
@@ -151,17 +160,20 @@ int main(int argc, char**argv)
 
         if (connected)
         {
-          cout << "PlayerInfo Size = " << playerInfo_g.size() << endl;
           string playerInfoStr = "$"+password+"$"+username+"$"; // add user ip 
           parserPlayerInfo(playerInfoStr, 1);
+
+          cout << "Final PlayerInfo Size = " << playerInfo_g.size() << endl;
+          for (int j = 0; j < (int)playerInfoStrVec_g.size(); j++)
+            cout << j << " = " << playerInfoStrVec_g[j] << endl;
+
 
           if (connType)
           {    
             for (int i = 0; i < maxClient; i++)
             {
-                for (int j = 0; j < playerInfoStrVec_g.size(); j++)
+                for (int j = 0; j < (int)playerInfoStrVec_g.size(); j++)
                 {
-
                     if (i != j)
                     {
                         if (sockConnect_g[i])
@@ -182,7 +194,7 @@ int main(int argc, char**argv)
           //runner.initGame(5);
           if (playerInfo_g.size() > 0)
           {
-              for (int i = 0; i < playerInfo_g.size(); i++)
+              for (int i = 0; i < (int)playerInfo_g.size(); i++)
                   cout << i << " # " << playerInfo_g[i].playerName << endl;
               runner.initGame(maxRow, playerInfo_g);
               runner.playGame();
@@ -203,13 +215,17 @@ void* accThreadsFunc(void *ptr)
 
     sockConnect_g[threadNo] = new Socket;
 
-    if (socket_g->accept(sockConnect_g[threadNo]))
+    if (socket_g->accept(sockConnect_g[threadNo], waitForConn_g))
     {
         joinedPlayersStatus_g[threadNo] = 1;
+
         joinedPlayersCount_g++;
+
         string playerInfoStr;
+
         int ret = sockConnect_g[threadNo]->recv(playerInfoStr);
-        if (!playerInfoStr.empty())
+
+        if (ret > 0 && !playerInfoStr.empty())
         {
             size_t passLen = gamePassWord_g.length();
             if (playerInfoStr.substr(1, passLen) == gamePassWord_g)
@@ -273,9 +289,9 @@ void parserPlayerInfo(string playerInfoStr, int pos)
 
         playerInfo_g.push_back(pInfo);
         cout << pos << " # pushing: " << playerInfoStr << endl;
-        if (pos)
-            playerInfoStrVec_g.insert(playerInfoStrVec_g.begin(), playerInfoStr);
-        else
+        //if (pos)
+        //    playerInfoStrVec_g.insert(playerInfoStrVec_g.begin(), playerInfoStr);
+        //else
             playerInfoStrVec_g.push_back(playerInfoStr);
     }
     else

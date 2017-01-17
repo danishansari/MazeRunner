@@ -55,8 +55,8 @@ class MazeRunner
     void primsMinSpanningTree();
     int findMinVertex(int*, std::vector<int>&);
 
-    bool isAlive();
-    bool isInsideMaze();
+    bool isAlive(int id=1);
+    bool isInsideMaze(int id=1);
 
     static void* displayThread(void *ptr);
 

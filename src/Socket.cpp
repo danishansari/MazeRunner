@@ -119,15 +119,13 @@ bool Socket::listen() const
  *
  * @return: return true on success and false on failure
  */
-bool Socket::accept(Socket *newSock) const
+bool Socket::accept(Socket *newSock, int waitTime) const
 {
     fd_set fd;
     FD_ZERO(&fd);
     FD_SET(m_sockFD, &fd);
 
-    struct timeval tv;
-    tv.tv_sec = 10;
-    tv.tv_usec = 0;
+    struct timeval tv = {waitTime, 0};
 
     if (select(m_sockFD+1, &fd, NULL, NULL, &tv) > 0)
     {
