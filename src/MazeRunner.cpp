@@ -32,6 +32,8 @@ bool MazeRunner::initGame(int num, vector<PlayerInfo> &playInfo)
     if (!m_socket)
         return false;
 
+    //m_numClients = playInfo.size()-1;
+
     if (num <= MAX_ROW)
     {
         m_mazeRow = num;
@@ -80,7 +82,7 @@ bool MazeRunner::isRunnerInsideMaze(int id)
 
 void MazeRunner::showMaze()
 {
-    system("clear");
+    //system("clear");
 
     //const char heart[] = "\xe2\x99\xa5";
 
@@ -151,22 +153,62 @@ void MazeRunner::displayMaze()
             if (m_socket[i])
             {
                 std::string posStr;
-                int ret = m_socket[i]->recv(posStr);
-
+                int ret = m_socket[i]->recv(posStr, 1);
+                //cout << ret << " socket[" << i << "] of " << m_numClients << " recv = " << posStr << endl;
                 if (ret >= 0)
                 {
                     if (ret > 0)
                     {
-                        int pos = atoi(posStr.c_str());
-                        updateMaze(pos, i);
+                        cout << "####### Recieved message = " << posStr << " cli = " << m_numClients<< endl;
+                        //cout << ret << " socket[" << i << "] of " << m_numClients << " recv = " << posStr << endl;
+                        size_t f = posStr.find(":");
+                        int pos = atoi(posStr.substr(0, f).c_str());
+                        int id = i;
+
+                        if (f != string::npos)
+                            id =  atoi(posStr.substr(f+1).c_str());
+
+                        if (m_numClients == 1)
+                            updateMaze(pos, i);
+                        else
+                            updateMaze(pos, id);
+
+                        for (int n = 0; n < m_numClients; n++)
+                        {
+                            if (n != i && m_socket[n])
+                            {
+                                string msg = "";
+
+                                std::stringstream ss1;
+                                ss1 << pos;
+
+                                msg += ss1.str() + ":";
+                                std::stringstream ss2;
+                                ss2 << i;
+                                
+                                msg += ss2.str();
+                                cout << "####### Sending message = " << msg << endl;
+                                int ret = m_socket[n]->send(msg);
+                                //if (ret <= 0)
+                                //{
+                                //    delete m_socket[i];
+                                //    m_socket[i] = NULL;
+                                //}
+
+                                //usleep(50000/m_numClients);
+                            }
+                        }
+
                     }
                 }
                 else
                 {
                     //cout << "Socket Disconnected--------------------" << endl;
-                  delete m_socket[i];
-                  m_socket[i] = NULL;
+                    delete m_socket[i];
+                    m_socket[i] = NULL;
                 }
+
+                countDisconnected = 0;
             }
             else
               countDisconnected ++;
@@ -197,12 +239,14 @@ void MazeRunner::displayMaze()
           break;
         }
     }
+
+    cout << "Recv stopped!!" << endl;
 }
 
 int MazeRunner::updateMaze(int dir, int playerId)
 {
   int ret = 0;
-  //cout << "Update Maze with " << dir << " for " << playerId << " vec size = "<< m_playerInfoVec.size() << endl;
+  cout << "Update Maze with " << dir << " for " << playerId << " vec size = "<< m_playerInfoVec.size() << endl;
 
   static int prevDir = dir;
 
@@ -261,11 +305,11 @@ void* MazeRunner::displayThread(void *ptr)
     return NULL;
 }
 
-void MazeRunner::generateMaze(int def)
+void MazeRunner::generateMaze(struct timeval tv)
 {
     int nVertices = m_mazeRow*m_mazeCol;
 
-    srand(time(NULL));
+    srand((tv.tv_sec*1000) + (tv.tv_usec/1000));
     for (int i = 0; i < nVertices; i++)
     {
         if (i+1 < (nVertices) && (i+1)%m_mazeRow != 0)
@@ -373,9 +417,9 @@ void MazeRunner::generateMaze(int def)
     }
 }
 
-void MazeRunner::playGame()
+void MazeRunner::playGame(struct timeval startTime)
 {
-    generateMaze();
+    generateMaze(startTime);
 
     pthread_create(&m_displayThread, NULL, displayThread, this);
 
@@ -405,15 +449,25 @@ void MazeRunner::playGame()
         }
       }
       //cout << "Dir = " << dir << " numClients = " << m_numClients << endl;
-      updateMaze(dir);
+      updateMaze(dir, m_numClients);
 
       for (int i = 0; i < m_numClients; i++)
       {
         if (m_socket[i])
         {
-          std::stringstream ss;
-          ss << dir;
-          int ret = m_socket[i]->send(ss.str());
+          string msg = "";
+          std::stringstream ss1;
+          ss1 << dir;
+
+          msg += ss1.str() + ":";
+
+          std::stringstream ss2;
+          ss2 << i;
+
+          msg += ss2.str();
+          cout << "i = " << i << " dir = " << dir << endl;
+          cout << "####### Sending message = " << msg << endl;
+          int ret = m_socket[i]->send(msg);
           if (ret <= 0)
           {
             delete m_socket[i];

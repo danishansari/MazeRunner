@@ -1,4 +1,4 @@
-CXX = -g -Wall
+CXX = -g -Wall -std=c++11
 SRCDIR = src
 OBJDIR = obj
 BINDIR = bin

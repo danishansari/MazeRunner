@@ -58,7 +58,7 @@ class Socket
         int send(const std::string msg) const;
 
         // function to recieve data
-        int recv(std::string &msg) const;
+        int recv(std::string &msg, int nonBlock=0) const;
 
 };
 

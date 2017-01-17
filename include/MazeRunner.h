@@ -50,7 +50,7 @@ class MazeRunner
     void displayMaze();
     int updateMaze(int p, int id=1);
     void showMaze();
-    void generateMaze(int def=0);
+    void generateMaze(struct timeval tv);
 
     void primsMinSpanningTree();
     int findMinVertex(int*, std::vector<int>&);
@@ -65,7 +65,7 @@ class MazeRunner
         ~MazeRunner();
 
         bool initGame(int num, std::vector<PlayerInfo> &playInfo);
-        void playGame();
+        void playGame(struct timeval tv);
 };
 
 #endif // MAZE_RUNNER_H

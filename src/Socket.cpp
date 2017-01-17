@@ -57,6 +57,8 @@ bool Socket::create()
     {
         fprintf(stderr, "\x1b[32m" "Socket:: could not set socket options\n" "\x1b[0m");
     }
+    
+    //fcntl(m_sockFD, F_SETFL, fcntl(m_sockFD, F_GETFL) | O_NONBLOCK);
 
     return true; // return success
 }
@@ -205,17 +207,37 @@ int Socket::send(std::string msg) const
  *
  * @return: return no of bytes sent successfuly
  */
-int Socket::recv(std::string &msg) const
+int Socket::recv(std::string &msg, int nonBlock) const
 {
     // temp buffer to recieve data
     char tmpMsg[MAX_RECV];
     memset(tmpMsg, '\0', MAX_RECV);
 
-    // recieve data from network
-    int status = ::recv(m_sockFD, tmpMsg, MAX_RECV, 0);
-   
-    // set recieved message 
-    msg = tmpMsg;
+    int status = 0;
+
+    if (nonBlock)
+    {
+        fd_set fd;
+        FD_ZERO(&fd);
+        FD_SET(m_sockFD, &fd);
+
+        struct timeval tv = {0, 100000};
+        if (select(m_sockFD+1, &fd, NULL, NULL, &tv) > 0)
+        {
+
+            // recieve data from network
+            status = ::recv(m_sockFD, tmpMsg, MAX_RECV, 0);
+
+            // set recieved message 
+            msg = tmpMsg;
+        }
+    }
+    else
+    {
+        status = ::recv(m_sockFD, tmpMsg, MAX_RECV, 0);
+
+        msg = tmpMsg;
+    }
 
     return status;
 }
