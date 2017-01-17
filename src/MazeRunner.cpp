@@ -76,16 +76,16 @@ void MazeRunner::showMaze()
     //const char heart[] = "\xe2\x99\xa5";
 
     for (int i = 0; i < (int)m_playerInfoVec.size(); i++)
-        cout << "> Player # " << i << " " << COL_g[i+1] << m_playerInfoVec[i].playerName << COL_g[0]<< endl;
+        cout << "> Player # " << i+1 << " " << COL_g[i+1] << m_playerInfoVec[i].playerName << COL_g[0]<< endl;
 
-    //for (int i = 0; i < 2*m_mazeRow+1; i++)
-    //{
-    //    for (int j = 0; j < 2*m_mazeCol+1; j++)
-    //    {
-    //        cout << m_maze[i][j] << "(" << (i*(2*m_mazeRow+1))+(j) << ") " ;
-    //    }
-    //    cout << endl;
-    //}
+    for (int i = 0; i < 2*m_mazeRow+1; i++)
+    {
+        for (int j = 0; j < 2*m_mazeCol+1; j++)
+        {
+            cout << m_maze[i][j] << "(" << (i*(2*m_mazeRow+1))+(j) << ") " ;
+        }
+        cout << endl;
+    }
     cout << "==================================" << endl;
 
     for (int i = 0; i < 2*m_mazeRow+1; i++)
@@ -208,6 +208,11 @@ void MazeRunner::displayMaze()
                     printf("Maze:: Pos = %d\n", pos); 
                     updateMaze(pos, i);
                 }
+                else
+                {
+                  delete m_socket[i];
+                  m_socket[i] = NULL;
+                }
             }
             else
               countDisconnected ++;
@@ -235,7 +240,7 @@ int MazeRunner::updateMaze(int dir, int playerId)
     int x = abs(m_playerInfoVec[playerId].currPos)/(m_mazeRow*2+1);
     int y = abs(m_playerInfoVec[playerId].currPos)%(m_mazeCol*2+1);
   
-    cout << m_playerInfoVec[playerId].currPos << " decompsed = (" << x << ", "<< y << ")" << endl;
+    cout << playerId << ". " << m_playerInfoVec[playerId].currPos << " decompsed = (" << x << ", "<< y << ")" << endl;
 
     if (abs(dir) % 2)
         x += dir;

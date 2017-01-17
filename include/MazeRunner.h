@@ -48,15 +48,15 @@ class MazeRunner
     pthread_t m_displayThread;
 
     void displayMaze();
-    int updateMaze(int p, int id=1);
+    int updateMaze(int p, int id=0);
     void showMaze();
     void generateMaze(int def=0);
 
     void primsMinSpanningTree();
     int findMinVertex(int*, std::vector<int>&);
 
-    bool isAlive(int id=1);
-    bool isInsideMaze(int id=1);
+    bool isAlive(int id=0);
+    bool isInsideMaze(int id=0);
 
     static void* displayThread(void *ptr);
 

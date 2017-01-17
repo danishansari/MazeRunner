@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <sys/time.h>
+#include <stdio.h>
 
 #include "Socket.h"
 #include "ServerSocket.h"
@@ -24,6 +25,7 @@ void parserPlayerInfo(string playerInfoStr, int pos=0);
 
 int* joinedPlayersStatus_g = NULL;
 int joinedPlayersCount_g = 0;
+int maxRow_g = 5;
 
 double waitForConn_g = 10.0;
 
@@ -40,7 +42,6 @@ int main(int argc, char**argv)
     string password = "admin";
     int maxClient = 3;
     int connType = 1;
-    int maxRow = 15;
 
     for (int i = 1; i < argc; i+=2)
     {
@@ -59,7 +60,7 @@ int main(int argc, char**argv)
         else if (string(argv[i]) == "-n")
             maxClient = atoi(argv[i+1]);
         else if (string(argv[i]) == "-r" && username == "superuser")
-            maxRow = atoi(argv[i+1]);
+            maxRow_g = atoi(argv[i+1]);
         else if (string(argv[i]) == "-c")
         {
             connType = 0;
@@ -133,7 +134,8 @@ int main(int argc, char**argv)
                         if (ret > 0 || playerInfoStr.find("connection accepted") != string::npos)
                         {
                             size_t found = playerInfoStr.find(":");
-                            maxRow = atoi(playerInfoStr.substr(found).c_str());
+                            if (found != string::npos)
+                              maxRow_g = atoi(playerInfoStr.substr(found+1).c_str());
       
                             while (playerInfoStr != "done")
                             {
@@ -193,13 +195,13 @@ int main(int argc, char**argv)
             }
           }
 
-          MazeRunner runner(sockConnect_g, maxClient);
+          MazeRunner runner(sockConnect_g, joinedPlayersCount_g);
           //runner.initGame(5);
           if (playerInfo_g.size() > 0)
           {
               for (int i = 0; i < (int)playerInfo_g.size(); i++)
                   cout << i << " # " << playerInfo_g[i].playerName << endl;
-              runner.initGame(maxRow, playerInfo_g);
+              runner.initGame(maxRow_g, playerInfo_g);
               runner.playGame();
           }
           else cout << "Unexpected error!!" << endl;
@@ -233,11 +235,14 @@ void* accThreadsFunc(void *ptr)
             size_t passLen = gamePassWord_g.length();
             if (playerInfoStr.substr(1, passLen) == gamePassWord_g)
             {
-                int ret = sockConnect_g[threadNo]->send("connection accepted");
+                char cmsg[1024];
+                sprintf(cmsg, "connection accepted:%d", maxRow_g);
+                
+                int ret = sockConnect_g[threadNo]->send(cmsg);
                 if (ret > 0)
                 {
                     //parserAndFillUserInfo(playerInfoStr.substr(passLen));
-                    cout << "PlyerInfo: " << playerInfoStr <<  endl;
+                    cout << "PlyerInfo: " << playerInfoStr << " " << cmsg <<  endl;
 
                     parserPlayerInfo(playerInfoStr);
                 }
