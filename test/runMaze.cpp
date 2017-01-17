@@ -136,6 +136,10 @@ int main(int argc, char**argv)
                             size_t found = playerInfoStr.find(":");
                             if (found != string::npos)
                               maxRow_g = atoi(playerInfoStr.substr(found+1).c_str());
+                            
+                            found = playerInfoStr.find_last_of(":");
+                            if (found != string::npos)
+                              joinedPlayersCount_g = atoi(playerInfoStr.substr(found+1).c_str());
       
                             while (playerInfoStr != "done")
                             {
@@ -236,7 +240,7 @@ void* accThreadsFunc(void *ptr)
             if (playerInfoStr.substr(1, passLen) == gamePassWord_g)
             {
                 char cmsg[1024];
-                sprintf(cmsg, "connection accepted:%d", maxRow_g);
+                sprintf(cmsg, "connection accepted:%d:%d", maxRow_g, joinedPlayersCount_g);
                 
                 int ret = sockConnect_g[threadNo]->send(cmsg);
                 if (ret > 0)

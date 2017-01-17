@@ -50,7 +50,7 @@ bool MazeRunner::initGame(int num, vector<PlayerInfo> &playInfo)
         {
             m_playerInfoVec[i].id = i+1;
             m_playerInfoVec[i].currPos = (2*m_mazeRow+1)*(2*m_mazeRow-1)+(2*m_mazeCol);
-            cout << "Init:: Player # " << i << " " << m_playerInfoVec[i].playerName << " pos = " << m_playerInfoVec[i].currPos << endl;
+            //cout << "Init:: Player # " << i << " " << m_playerInfoVec[i].playerName << " pos = " << m_playerInfoVec[i].currPos << endl;
         }
     }
     else
@@ -59,34 +59,44 @@ bool MazeRunner::initGame(int num, vector<PlayerInfo> &playInfo)
     return true;
 }
 
-bool MazeRunner::isAlive(int id)
+bool MazeRunner::isRunnerAlive(int id)
 {
   return true;
 }
 
-bool MazeRunner::isInsideMaze(int id)
+bool MazeRunner::isRunnerInsideMaze(int id)
 {
+  if (id == -1)
+  {
+    for (int i = 0; i < (int)m_playerInfoVec.size(); i++)
+        if (m_playerInfoVec[i].currPos == 1)
+            return false;
+
+    return true;
+  }
+
   return (m_playerInfoVec[id].currPos != 1);
 }
 
 void MazeRunner::showMaze()
 {
-    //system("clear");
+    system("clear");
 
     //const char heart[] = "\xe2\x99\xa5";
 
     for (int i = 0; i < (int)m_playerInfoVec.size(); i++)
-        cout << "> Player # " << i+1 << " " << COL_g[i+1] << m_playerInfoVec[i].playerName << COL_g[0]<< endl;
+        printf("> Player # %d %s%s%s\n", i+1, COL_g[i+1].c_str(), 
+                        m_playerInfoVec[i].playerName.c_str(), COL_g[0].c_str());
 
-    for (int i = 0; i < 2*m_mazeRow+1; i++)
-    {
-        for (int j = 0; j < 2*m_mazeCol+1; j++)
-        {
-            cout << m_maze[i][j] << "(" << (i*(2*m_mazeRow+1))+(j) << ") " ;
-        }
-        cout << endl;
-    }
-    cout << "==================================" << endl;
+    //for (int i = 0; i < 2*m_mazeRow+1; i++)
+    //{
+    //    for (int j = 0; j < 2*m_mazeCol+1; j++)
+    //    {
+    //        cout << m_maze[i][j] << "(" << (i*(2*m_mazeRow+1))+(j) << ") " ;
+    //    }
+    //    cout << endl;
+    //}
+    printf("==================================\n");
 
     for (int i = 0; i < 2*m_mazeRow+1; i++)
     {
@@ -100,11 +110,11 @@ void MazeRunner::showMaze()
                 for (int m = 0; m < (int)m_playerInfoVec.size(); m++)
                 {
                     if (playerFound != abs(m_playerInfoVec[m].currPos) && 
-                        ((i*(2*m_mazeRow+1))+(j)) == abs(m_playerInfoVec[m].currPos))
+                            ((i*(2*m_mazeRow+1))+(j)) == abs(m_playerInfoVec[m].currPos))
                     {
                         if (abs(m_playerInfoVec[m].currPos) != (((2*m_mazeRow)+1)*((2*m_mazeCol)-1)+2*m_mazeCol) &&
-                            ((m > 0 && abs(m_playerInfoVec[m].currPos) == abs(m_playerInfoVec[m-1].currPos)) ||
-                            (m < (int)m_playerInfoVec.size()-1 && abs(m_playerInfoVec[m].currPos)) == abs(m_playerInfoVec[m+1].currPos)))
+                                ((m > 0 && abs(m_playerInfoVec[m].currPos) == abs(m_playerInfoVec[m-1].currPos)) ||
+                                 (m < (int)m_playerInfoVec.size()-1 && abs(m_playerInfoVec[m].currPos)) == abs(m_playerInfoVec[m+1].currPos)))
                         {
                             printf("%s* %s", COL_g[m+1].c_str(), COL_g[0].c_str());
                         }
@@ -126,75 +136,16 @@ void MazeRunner::showMaze()
         }
         printf("\n");
     }
-
-    //for (int i = 0; i < 2*m_mazeRow+1; i++)
-    //{
-    //    for (int j = 0; j < 2*m_mazeCol+1; j++)
-    //    {
-    //        cout << i*(2*m_mazeRow+1)+j <<" "; 
-    //    }
-    //    cout << endl;
-    //}
-
-
-#if 0
-    std::map<int, int>::iterator it = m_spanningTree.begin();
-    for (it=m_spanningTree.begin(); it!=m_spanningTree.end(); ++it)
-        printf("%d --> %d\n", it->first, it->second);
-    
-    for (int i = 0; i < m_mazeRow; i++)
-    {
-        printf ("\n\t(%d) ", (i*m_mazeRow));
-        for (int j = 0; j < m_mazeCol-1; j++)
-        {
-            if ((i*m_mazeRow)+j+1 == m_spanningTree.find(i*m_mazeRow+j)->second)
-                printf("----");
-            else
-                printf("\t");
-
-            printf(" (%d) ", (i*m_mazeRow)+j+1);
-        }
-
-        if (i < m_mazeRow-1)
-        {
-            printf("\n");
-            for (int i = 0; i < 3; i++)
-            {
-                for (int j = 0; j < m_mazeCol-1; j++)
-                    printf("\t |");
-                printf("\n");
-            }
-        }
-    }
-    printf("\n");
-    
-
-    //int nVertices = m_mazeRow*m_mazeCol;
-
-    //for (int i = 0; i < nVertices; i++)
-    //{
-    //    for (int j = 0; j < nVertices; j++)
-    //        printf("%d ", m_maze[i][j]);
-
-    //    printf("\n");
-    //}
-   
-    //printf ("spanningTree size = %d\n", m_spanningTree.size());
-
-    //std::map<int, int>::iterator it = m_spanningTree.begin();
-    //for (it=m_spanningTree.begin(); it!=m_spanningTree.end(); ++it)
-    //    printf("%d --> %d\n", it->first, it->second);
-#endif
 }
 
 void MazeRunner::displayMaze()
 {
     int countDisconnected = 0;
 
-    while (isAlive() && isInsideMaze())
-    {
-        showMaze();
+    showMaze();
 
+    while (isRunnerAlive() && isRunnerInsideMaze())
+    {
         for (int i = 0; i < m_numClients; i++)
         {
             if (m_socket[i])
@@ -202,14 +153,17 @@ void MazeRunner::displayMaze()
                 std::string posStr;
                 int ret = m_socket[i]->recv(posStr);
 
-                if (ret > 0)
+                if (ret >= 0)
                 {
-                    int pos = atoi(posStr.c_str());
-                    printf("Maze:: Pos = %d\n", pos); 
-                    updateMaze(pos, i);
+                    if (ret > 0)
+                    {
+                        int pos = atoi(posStr.c_str());
+                        updateMaze(pos, i);
+                    }
                 }
                 else
                 {
+                    //cout << "Socket Disconnected--------------------" << endl;
                   delete m_socket[i];
                   m_socket[i] = NULL;
                 }
@@ -218,7 +172,24 @@ void MazeRunner::displayMaze()
               countDisconnected ++;
         }
         
-        usleep(50000);
+        usleep(20000);
+
+        for (int i = 0; i < (int)m_playerInfoVec.size(); i++)
+        {
+            if (m_playerInfoVec[i].currPos == 1)
+            {
+                if (i != 1)
+                    printf("Runner:: %s won, better luck next time\n", 
+                        m_playerInfoVec[i].playerName.c_str());
+                else
+                    printf("Runner:: You won!!\n");
+
+                countDisconnected = m_numClients;
+               
+                // FIXME:: this should be handled properly
+                exit(0);
+            }
+        }
 
         if (countDisconnected == (int)m_numClients)
         {
@@ -231,7 +202,7 @@ void MazeRunner::displayMaze()
 int MazeRunner::updateMaze(int dir, int playerId)
 {
   int ret = 0;
-  cout << "Update Maze with " << dir << " for " << playerId << " vec size = "<< m_playerInfoVec.size() << endl;
+  //cout << "Update Maze with " << dir << " for " << playerId << " vec size = "<< m_playerInfoVec.size() << endl;
 
   static int prevDir = dir;
 
@@ -240,7 +211,7 @@ int MazeRunner::updateMaze(int dir, int playerId)
     int x = abs(m_playerInfoVec[playerId].currPos)/(m_mazeRow*2+1);
     int y = abs(m_playerInfoVec[playerId].currPos)%(m_mazeCol*2+1);
   
-    cout << playerId << ". " << m_playerInfoVec[playerId].currPos << " decompsed = (" << x << ", "<< y << ")" << endl;
+    //cout << playerId << ". " << m_playerInfoVec[playerId].currPos << " decompsed = (" << x << ", "<< y << ")" << endl;
 
     if (abs(dir) % 2)
         x += dir;
@@ -249,17 +220,17 @@ int MazeRunner::updateMaze(int dir, int playerId)
 
     int newPos = x*(2*m_mazeRow+1)+y;
 
-    cout << "compose = (" << x << ", "<< y << ") = " << newPos << " d = " << dir * prevDir << endl;
+    //cout << "compose = (" << x << ", "<< y << ") = " << newPos << " d = " << dir * prevDir << endl;
 
     if (y > 0 && newPos > 0 && !m_maze[x][y] && 
         newPos < (((2*m_mazeRow)+1)*((2*m_mazeCol))))
     {
-        cout << "1st if passed------------------------- " << endl;
+        //cout << "1st if passed------------------------- " << endl;
         if ((m_playerInfoVec[playerId].currPos < 0 && dir < 0)|| (m_playerInfoVec[playerId].currPos > 0 && 
                     (dir*prevDir < 0 || dir > 0 || dir%2)))
         {
             m_playerInfoVec[playerId].currPos = newPos;
-            cout << "m_playerInfoVec["<< playerId << "].currPos = " << m_playerInfoVec[playerId].currPos << endl;
+            //cout << "m_playerInfoVec["<< playerId << "].currPos = " << m_playerInfoVec[playerId].currPos << endl;
             if (dir == 2)
                 m_playerInfoVec[playerId].currPos *= -1;
 
@@ -270,18 +241,16 @@ int MazeRunner::updateMaze(int dir, int playerId)
     }
     else
     {
-        cout << "1st if failed: " << y << " " << newPos << " newpos = " << newPos  << " : " << ((2*m_mazeRow)+1)*((2*m_mazeCol))<< endl;
+        //cout << "1st if failed: " << y << " " << newPos << " newpos = " << newPos  << " : " << ((2*m_mazeRow)+1)*((2*m_mazeCol))<< endl;
         m_playerInfoVec[playerId].currPos *= -1;
     }
 
     prevDir = dir;
   }
   else
-      cout << "Runner:: invalid player request!!" << endl;
+      printf("Runner:: invalid player request!!");
 
   showMaze();
-
-  usleep(50000);
 
   return ret;
 }
@@ -412,7 +381,7 @@ void MazeRunner::playGame()
 
     int dir=0;
 
-    while (isAlive() && isInsideMaze())
+    while (isRunnerAlive() && isRunnerInsideMaze())
     {
       if (getch() == '\033') { // if the first value is esc
         getch(); // skip the [
@@ -435,7 +404,7 @@ void MazeRunner::playGame()
             break;
         }
       }
-      cout << "Dir = " << dir << endl;
+      //cout << "Dir = " << dir << " numClients = " << m_numClients << endl;
       updateMaze(dir);
 
       for (int i = 0; i < m_numClients; i++)
@@ -450,10 +419,12 @@ void MazeRunner::playGame()
             delete m_socket[i];
             m_socket[i] = NULL;
           }
+        
+          usleep(50000/m_numClients);
         }
       }
 
-      usleep(10000);
+      //usleep(50000);
       //break;
     }
 
