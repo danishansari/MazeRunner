@@ -130,8 +130,11 @@ int main(int argc, char**argv)
                     {
                         int ret = sockConnect_g[0]->recv(playerInfoStr);
                         cout << "recv = " << playerInfoStr << endl;
-                        if (ret > 0 || playerInfoStr == "connection accepted")
+                        if (ret > 0 || playerInfoStr.find("connection accepted") != string::npos)
                         {
+                            size_t found = playerInfoStr.find(":");
+                            maxRow = atoi(playerInfoStr.substr(found).c_str());
+      
                             while (playerInfoStr != "done")
                             {
                                 sockConnect_g[0]->recv(playerInfoStr);

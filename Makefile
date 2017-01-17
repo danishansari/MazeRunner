@@ -2,21 +2,27 @@ CXX = -g -Wall
 SRCDIR = src
 OBJDIR = obj
 BINDIR = bin
+INCDIR = include
 
 SRCS = Socket.cpp ServerSocket.cpp ClientSocket.cpp MazeRunner.cpp
 OBJS = $(SRCS:%.cpp=$(OBJDIR)/%.o)
 
 INCFLAGS = -Iinclude
 
-BIN_TRGTS = $(BINDIR)/MazeRunner_1.0
 
 LDFLAGS = -lpthread
 CXXFLAGS = $(INCFLAGS)
 
+FILE=$(INCDIR)/RunnerVersion.txt
+VERSION = `grep 'MINOR_VERSION' $(FILE)`
+
+BIN_TRGTS = $(BINDIR)/MazeRunner_1.1_beta
+
 all: $(BIN_TRGTS)
+	@echo $(VERSION)
 
 
-$(BINDIR)/MazeRunner_1.0: $(OBJS)
+$(BIN_TRGTS): $(OBJS)
 	@mkdir -p $(@D)
 	g++ $(CXX) test/runMaze.cpp  $^ -o $@ $(CXXFLAGS) $(LDFLAGS)
 

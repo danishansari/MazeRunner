@@ -7,6 +7,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 
 #include <iostream>
 using namespace std;
@@ -70,7 +71,7 @@ bool MazeRunner::isInsideMaze(int id)
 
 void MazeRunner::showMaze()
 {
-    system("clear");
+    //system("clear");
 
     //const char heart[] = "\xe2\x99\xa5";
 
@@ -188,6 +189,8 @@ void MazeRunner::showMaze()
 
 void MazeRunner::displayMaze()
 {
+    int countDisconnected = 0;
+
     while (isAlive() && isInsideMaze())
     {
         showMaze();
@@ -206,11 +209,17 @@ void MazeRunner::displayMaze()
                     updateMaze(pos, i);
                 }
             }
+            else
+              countDisconnected ++;
         }
         
-        usleep(10000);
+        usleep(50000);
 
-        //break;
+        if (countDisconnected == (int)m_numClients)
+        {
+          m_numClients = 0;
+          break;
+        }
     }
 }
 
@@ -221,7 +230,7 @@ int MazeRunner::updateMaze(int dir, int playerId)
 
   static int prevDir = dir;
 
-  if (playerId < (int)m_playerInfoVec.size())
+  if (playerId < (int)m_playerInfoVec.size() || m_numClients == 0)
   {
     int x = abs(m_playerInfoVec[playerId].currPos)/(m_mazeRow*2+1);
     int y = abs(m_playerInfoVec[playerId].currPos)%(m_mazeCol*2+1);
@@ -236,7 +245,6 @@ int MazeRunner::updateMaze(int dir, int playerId)
     int newPos = x*(2*m_mazeRow+1)+y;
 
     cout << "compose = (" << x << ", "<< y << ") = " << newPos << " d = " << dir * prevDir << endl;
-
 
     if (y > 0 && newPos > 0 && !m_maze[x][y] && 
         newPos < (((2*m_mazeRow)+1)*((2*m_mazeCol))))
@@ -257,7 +265,7 @@ int MazeRunner::updateMaze(int dir, int playerId)
     }
     else
     {
-        cout << "1st if failed: " << y << " " << newPos << " " << (4*m_mazeRow*(m_mazeCol)-1) << endl;
+        cout << "1st if failed: " << y << " " << newPos << " newpos = " << newPos  << " : " << ((2*m_mazeRow)+1)*((2*m_mazeCol))<< endl;
         m_playerInfoVec[playerId].currPos *= -1;
     }
 
@@ -267,6 +275,8 @@ int MazeRunner::updateMaze(int dir, int playerId)
       cout << "Runner:: invalid player request!!" << endl;
 
   showMaze();
+
+  usleep(50000);
 
   return ret;
 }
@@ -281,6 +291,7 @@ void MazeRunner::generateMaze(int def)
 {
     int nVertices = m_mazeRow*m_mazeCol;
 
+    srand(time(NULL));
     for (int i = 0; i < nVertices; i++)
     {
         if (i+1 < (nVertices) && (i+1)%m_mazeRow != 0)
@@ -398,48 +409,47 @@ void MazeRunner::playGame()
 
     while (isAlive() && isInsideMaze())
     {
-
-        if (getch() == '\033') { // if the first value is esc
-            getch(); // skip the [
-            switch(getch()) { // the real value
-                case 'A':
-                    // code for arrow up
-                    dir = -1;
-                    break;
-                case 'B':
-                    // code for arrow down
-                    dir = 1;
-                    break;
-                case 'C':
-                    // code for arrow right
-                    dir = 2;
-                    break;
-                case 'D':
-                    // code for arrow left
-                    dir = -2;
-                    break;
-            }
+      if (getch() == '\033') { // if the first value is esc
+        getch(); // skip the [
+        switch(getch()) { // the real value
+          case 'A':
+            // code for arrow up
+            dir = -1;
+            break;
+          case 'B':
+            // code for arrow down
+            dir = 1;
+            break;
+          case 'C':
+            // code for arrow right
+            dir = 2;
+            break;
+          case 'D':
+            // code for arrow left
+            dir = -2;
+            break;
         }
-        cout << "Dir = " << dir << endl;
-        updateMaze(dir);
+      }
+      cout << "Dir = " << dir << endl;
+      updateMaze(dir);
 
-        for (int i = 0; i < m_numClients; i++)
+      for (int i = 0; i < m_numClients; i++)
+      {
+        if (m_socket[i])
         {
-            if (m_socket[i])
-            {
-                std::stringstream ss;
-                ss << dir;
-                int ret = m_socket[i]->send(ss.str());
-                if (ret <= 0)
-                {
-                    delete m_socket[i];
-                    m_socket[i] = NULL;
-                }
-            }
+          std::stringstream ss;
+          ss << dir;
+          int ret = m_socket[i]->send(ss.str());
+          if (ret <= 0)
+          {
+            delete m_socket[i];
+            m_socket[i] = NULL;
+          }
         }
+      }
 
-        usleep(10000);
-        //break;
+      usleep(10000);
+      //break;
     }
 
     pthread_join(m_displayThread, NULL);

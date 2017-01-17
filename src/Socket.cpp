@@ -52,15 +52,6 @@ bool Socket::create()
         return false; // return failure
     }
 
-    struct timeval timeout;      
-    timeout.tv_sec = 10;
-    timeout.tv_usec = 0;
-
-    //if (setsockopt (sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
-    //            sizeof(timeout)) < 0)
-    //    error("setsockopt failed\n");
-
-    // set socket option to reuse socket for reconnection
     int on = 1;
     if (setsockopt(m_sockFD, SOL_SOCKET, SO_REUSEADDR, (const char *)&on, sizeof(on)) == -1)
     {
@@ -148,6 +139,8 @@ bool Socket::accept(Socket *newSock, int waitTime) const
         else
             return true; // return success
     }
+
+    return false;
 }
 
 /**
