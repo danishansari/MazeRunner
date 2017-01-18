@@ -48,7 +48,7 @@ class MazeRunner
     pthread_t m_displayThread;
 
     void displayMaze();
-    int updateMaze(int p, int id=1);
+    int updateMaze(int p, int dir, int id=0);
     void showMaze();
     void generateMaze(struct timeval tv);
 
@@ -60,6 +60,7 @@ class MazeRunner
 
     static void* displayThread(void *ptr);
 
+    int getMyPosition(int d, int p);
     public:
         MazeRunner(Socket **socket, int numClients=1);
         ~MazeRunner();

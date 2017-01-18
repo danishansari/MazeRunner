@@ -24,7 +24,7 @@ void* accThreadsFunc(void *ptr);
 void parserPlayerInfo(string playerInfoStr, int pos=0);
 
 int joinedPlayersCount_g = 0;
-int maxRow_g = 5;
+int maxRow_g = 10;
 
 double waitForConn_g = 10.0;
 
@@ -39,7 +39,7 @@ int main(int argc, char**argv)
     int port = 8000;
     string username = "unknown";
     string password = "admin";
-    int maxClient = 3;
+    int maxClient = 2;
     int connType = 1;
 
     for (int i = 1; i < argc; i+=2)
@@ -70,8 +70,13 @@ int main(int argc, char**argv)
     
     if (username == "unknown")
     {
-        cout << "Provide User Name" << endl;
+        //cout << "Provide User Name" << endl;
         return -1;
+    }
+    else if (maxClient > 2) // FIXME
+    {
+        cout << "This Version Support MAX PLAYER to 3" << endl;
+        maxClient = 2;
     }
 
     if (!connType)
@@ -108,7 +113,7 @@ int main(int argc, char**argv)
                 gamePassWord_g = password;
 
                 if (i == 0)
-                    cout << "Runner:: Waiting for players.." << endl;
+                    //cout << "Runner:: Waiting for players.." << endl;
                
                 gettimeofday(&tv_start, NULL);
 
@@ -120,11 +125,11 @@ int main(int argc, char**argv)
             }
             else // client
             {
-                cout << "Runner:: trying to connect.." << endl;
+                //cout << "Runner:: trying to connect.." << endl;
 
                 if (!socket_g->connect(ip, port))
                 {
-                    cout << "Runner:: could not connect to: " << ip << endl;
+                    //cout << "Runner:: could not connect to: " << ip << endl;
                     connected = 0;
                 }
                 else
@@ -136,7 +141,7 @@ int main(int argc, char**argv)
                     if (ret > 0)
                     {
                         int ret = sockConnect_g[0]->recv(playerInfoStr);
-                        cout << "recv = " << playerInfoStr << endl;
+                        //cout << "recv = " << playerInfoStr << endl;
                         if (ret > 0 || playerInfoStr.find("connection accepted") != string::npos)
                         {
                             size_t found = playerInfoStr.find(":");
@@ -149,8 +154,10 @@ int main(int argc, char**argv)
       
                             while (playerInfoStr != "done")
                             {
+                                if (playerInfoStr.find("done") == string::npos)
                                 sockConnect_g[0]->recv(playerInfoStr);
-                                cout << "String recv = " << playerInfoStr << endl; 
+
+                                //cout << "String recv = " << playerInfoStr << endl; 
             
                                 long sec = 0;
                                 long usec = 0;
@@ -166,7 +173,7 @@ int main(int argc, char**argv)
                                     gameStartTime.tv_sec = sec;
                                     gameStartTime.tv_usec = usec;
 
-                                    cout << "# TimeStamp = " << sec << "." << usec << endl;
+                                    //cout << "# TimeStamp = " << sec << "." << usec << endl;
                                 }
 
                                 if (playerInfoStr.length() > 0)
@@ -179,13 +186,13 @@ int main(int argc, char**argv)
                         }
                         else
                         {
-                           cout << "Runner:: Wrong Password!!" << endl;
+                           //cout << "Runner:: Wrong Password!!" << endl;
                            connected = 0;
                         }
                     }
                     else
                     {
-                        cout << "Runner:: Could not send data over socket!!" << endl;
+                        //cout << "Runner:: Could not send data over socket!!" << endl;
                     }
                 }
             }
@@ -196,9 +203,9 @@ int main(int argc, char**argv)
           string playerInfoStr = "$$"+password+"$"+username+"$$"; // add user ip 
           parserPlayerInfo(playerInfoStr, 1);
 
-          cout << "Final PlayerInfo Size = " << playerInfo_g.size() << endl;
+          //cout << "Final PlayerInfo Size = " << playerInfo_g.size() << endl;
           for (int j = 0; j < (int)playerInfoStrVec_g.size(); j++)
-            cout << j << " = " << playerInfoStrVec_g[j] << endl;
+            //cout << j << " = " << playerInfoStrVec_g[j] << endl;
 
           if (connType)
           {    
@@ -210,7 +217,7 @@ int main(int argc, char**argv)
                     {
                         if (sockConnect_g[i])
                         {
-                            cout << "server: sending[" << i << "] : j = " << j << " : "  << playerInfoStrVec_g[j] << endl;
+                            //cout << "server: sending[" << i << "] : j = " << j << " : "  << playerInfoStrVec_g[j] << endl;
                             sockConnect_g[i]->send(playerInfoStrVec_g[j]);
 
                             char timeStr[1024];
@@ -225,14 +232,14 @@ int main(int argc, char**argv)
                     sockConnect_g[i]->send("done");
             }
           }
-            cout << "start game with clients = " << maxClient << endl;
+            //cout << "start game with clients = " << maxClient << endl;
           //MazeRunner runner(sockConnect_g, joinedPlayersCount_g);
           MazeRunner runner(sockConnect_g, maxClient);
           //runner.initGame(5);
           if (playerInfo_g.size() > 0)
           {
               for (int i = 0; i < (int)playerInfo_g.size(); i++)
-                  cout << i << " # " << playerInfo_g[i].playerName << endl;
+                  //cout << i << " # " << playerInfo_g[i].playerName << endl;
               runner.initGame(maxRow_g, playerInfo_g);
               runner.playGame(gameStartTime);
           }
@@ -240,7 +247,7 @@ int main(int argc, char**argv)
         }
     }
 
-    cout << "Runner:: You played nice: " << username << endl;
+    //cout << "Runner:: You played nice: " << username << endl;
 
     return 0;
 }
@@ -248,7 +255,7 @@ int main(int argc, char**argv)
 void* accThreadsFunc(void *ptr)
 {
     int threadNo = *(int *)ptr;
-    cout << "Thread no = " << threadNo << endl;
+    //cout << "Thread no = " << threadNo << endl;
 
     sockConnect_g[threadNo] = new Socket;
 
@@ -267,12 +274,12 @@ void* accThreadsFunc(void *ptr)
             {
                 char cmsg[1024];
                 sprintf(cmsg, "connection accepted:%d:%d", maxRow_g, joinedPlayersCount_g);
-                cout << threadNo << " Player Accepted = " << playerInfoStr << endl;
+                //cout << threadNo << " Player Accepted = " << playerInfoStr << endl;
                 int ret = sockConnect_g[threadNo]->send(cmsg);
                 if (ret > 0)
                 {
                     //parserAndFillUserInfo(playerInfoStr.substr(passLen));
-                    cout << "PlyerInfo: " << playerInfoStr << " " << cmsg <<  endl;
+                    //cout << "PlyerInfo: " << playerInfoStr << " " << cmsg <<  endl;
 
                     parserPlayerInfo(playerInfoStr);
                 }
@@ -286,7 +293,7 @@ void* accThreadsFunc(void *ptr)
             {
                 int ret = sockConnect_g[threadNo]->send("connection refused: "+gamePassWord_g);
                 if (ret < 0)
-                    cout << "Runner:: connection refused!!" <<  endl;
+                    //cout << "Runner:: connection refused!!" <<  endl;
 
                 delete sockConnect_g[threadNo];
                 sockConnect_g[threadNo] = NULL;
@@ -299,19 +306,21 @@ void* accThreadsFunc(void *ptr)
 
 void parserPlayerInfo(string playerInfoStr, int pos)
 {
-  cout << "Init Parsing with : " << playerInfoStr << endl;
+  //cout << "Init Parsing with : " << playerInfoStr << endl;
     string tmpStr = playerInfoStr;
 
     size_t foundPos = 0;
 
     PlayerInfo pInfo;
 
+    vector<PlayerInfo>::iterator it = playerInfo_g.begin();
+
     while (tmpStr.length() > 0)
     {
         vector<string> parsedStringVec;
 
         foundPos = tmpStr.find("$$");
-        cout << "Start Parse: " << tmpStr << endl;
+        //cout << "Start Parse: " << tmpStr << endl;
         if (foundPos != string::npos)
         {
             tmpStr = tmpStr.substr(foundPos+2);
@@ -329,39 +338,44 @@ void parserPlayerInfo(string playerInfoStr, int pos)
                     {
                         parsedStringVec.push_back(compStr.substr(0, found1));
                         parsedStringVec.push_back(compStr.substr(found1+1));
-                        cout << "######## Pushing: " << compStr << endl;
+                        //cout << "######## Pushing: " << compStr << endl;
                     }
                 }
             }
 
             tmpStr = tmpStr.substr(found+2);
-            cout << "Stop Parse: " << tmpStr << endl;
+            //cout << "Stop Parse: " << tmpStr << endl;
         }
 
         if (parsedStringVec.size() > 1)
         {
             pInfo.playerName = parsedStringVec[1];
 
-            playerInfo_g.push_back(pInfo);
-            cout << pos << " # pushing: " << playerInfoStr << endl;
             if (pos)
-              playerInfoStrVec_g.insert(playerInfoStrVec_g.begin(), playerInfoStr);
+            {
+                playerInfo_g.insert(playerInfo_g.begin(), pInfo);
+                playerInfoStrVec_g.insert(playerInfoStrVec_g.begin(), playerInfoStr);
+            }
             else
-              playerInfoStrVec_g.push_back(playerInfoStr);
+            {
+                playerInfo_g.push_back(pInfo);
+                playerInfoStrVec_g.push_back(playerInfoStr);
+            }
+
         }
         else
         {
-            cout << "empty string: " << tmpStr << endl;
+            //cout << "empty string: " << tmpStr << endl;
             tmpStr = "";
         }
     }
 
     if (pos)
     {
-      cout << "$$$$$$$$$$$$$$$$$$$$$$ POS = 1" << endl;
-      for (int i = 0; i < pInfo.size(); i++)
+      //cout << "$$$$$$$$$$$$$$$$$$$$$$ POS = 1" << endl;
+      for (int i = 0; i < playerInfo_g.size(); i++)
       {
-        cout << "Player # " << i << " : " << pInfo[i].playerName << endl;
+        //cout << "Player # " << i << " : " << playerInfo_g[i].playerName << endl;
       }
     }
 }

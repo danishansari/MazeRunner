@@ -1,5 +1,5 @@
 ==========================
 MAJOR_VERSION 1.0
-MINOR_VERSION 1.1_beta
+MINOR_VERSION 1.2
 DATE          17/01/2017
 ==========================
