@@ -24,7 +24,7 @@ void* accThreadsFunc(void *ptr);
 void parserPlayerInfo(string playerInfoStr, int pos=0);
 
 int joinedPlayersCount_g = 0;
-int maxRow_g = 10;
+int maxRow_g = 15;
 
 double waitForConn_g = 10.0;
 
