@@ -163,7 +163,8 @@ int main(int argc, char**argv)
 
                                     found1 = playerInfoStr.find_last_of("]");
                                     usec = atol(playerInfoStr.substr(found2+1, found1).c_str());
-                                    gameStartTime = {sec, usec};
+                                    gameStartTime.tv_sec = sec;
+                                    gameStartTime.tv_usec = usec;
 
                                     cout << "# TimeStamp = " << sec << "." << usec << endl;
                                 }
@@ -205,7 +206,7 @@ int main(int argc, char**argv)
             {
                 for (int j = 0; j < (int)playerInfoStrVec_g.size(); j++)
                 {
-                    if (i != j)
+                    if (j != i+1)
                     {
                         if (sockConnect_g[i])
                         {
@@ -298,6 +299,7 @@ void* accThreadsFunc(void *ptr)
 
 void parserPlayerInfo(string playerInfoStr, int pos)
 {
+  cout << "Init Parsing with : " << playerInfoStr << endl;
     string tmpStr = playerInfoStr;
 
     size_t foundPos = 0;
@@ -342,12 +344,24 @@ void parserPlayerInfo(string playerInfoStr, int pos)
 
             playerInfo_g.push_back(pInfo);
             cout << pos << " # pushing: " << playerInfoStr << endl;
-            playerInfoStrVec_g.push_back(playerInfoStr);
+            if (pos)
+              playerInfoStrVec_g.insert(playerInfoStrVec_g.begin(), playerInfoStr);
+            else
+              playerInfoStrVec_g.push_back(playerInfoStr);
         }
         else
         {
             cout << "empty string: " << tmpStr << endl;
             tmpStr = "";
         }
+    }
+
+    if (pos)
+    {
+      cout << "$$$$$$$$$$$$$$$$$$$$$$ POS = 1" << endl;
+      for (int i = 0; i < pInfo.size(); i++)
+      {
+        cout << "Player # " << i << " : " << pInfo[i].playerName << endl;
+      }
     }
 }

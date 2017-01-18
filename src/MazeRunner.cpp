@@ -449,7 +449,7 @@ void MazeRunner::playGame(struct timeval startTime)
         }
       }
       //cout << "Dir = " << dir << " numClients = " << m_numClients << endl;
-      updateMaze(dir, m_numClients);
+      updateMaze(dir, 0);
 
       for (int i = 0; i < m_numClients; i++)
       {
