@@ -25,6 +25,7 @@ char getch_(int echo)
   char ch;
   initTermios(echo);
   ch = getchar();
+  fflush(stdin);
   resetTermios();
   return ch;
 }

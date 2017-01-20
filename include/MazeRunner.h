@@ -11,6 +11,9 @@
 #define MAX_ROW 1000
 #define MAX_COL 1000
 
+#define TIMEDIFF_MS(t1, t2) (t1.tv_sec - t2.tv_sec)*1000.0 +\
+                            (t1.tv_usec - t2.tv_usec)/1000.0
+
 struct PlayerInfo
 {
     std::string playerName;

@@ -16,7 +16,7 @@ CXXFLAGS = $(INCFLAGS)
 FILE=$(INCDIR)/RunnerVersion.txt
 VERSION = `grep 'MINOR_VERSION' $(FILE)`
 
-BIN_TRGTS = $(BINDIR)/MazeRunner_1.2
+BIN_TRGTS = $(BINDIR)/MazeRunner_1.3
 
 all: $(BIN_TRGTS)
 	@echo $(VERSION)
