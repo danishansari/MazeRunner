@@ -99,7 +99,6 @@ void MazeRunner::showMaze()
     //    cout << endl;
     //}
     printf("==================================\n");
-    int block = 0;
     for (int i = 0; i < 2*m_mazeRow+1; i++)
     {
         for (int j = 0; j < 2*m_mazeCol+1; j++)
@@ -125,12 +124,10 @@ void MazeRunner::showMaze()
                         if (m_playerInfoVec[m].currPos > 0)
                         {
                             printf("%s *%s", COL_g[m+1].c_str(), COL_g[0].c_str());
-                            block = 2;
                         }
                         else
                         {
                             printf("%s* %s", COL_g[m+1].c_str(), COL_g[0].c_str());
-                            block = 3;
                         }
 
                         playerFound = abs(m_playerInfoVec[m].currPos);
@@ -202,11 +199,11 @@ void MazeRunner::displayMaze()
 
                                 int ret = m_socket[n]->send(msg);
 
-                                //if (ret <= 0)
-                                //{
-                                //    delete m_socket[i];
-                                //    m_socket[i] = NULL;
-                                //}
+                                if (ret < 0)
+                                {
+                                    delete m_socket[i];
+                                    m_socket[i] = NULL;
+                                }
 
                                 usleep(50000/m_numClients);
                             }
@@ -314,9 +311,6 @@ int MazeRunner::updateMaze(int pos, int dir, int playerId)
   }
   else
       printf("Runner:: invalid player request!!");
-
-  for (int i = 0; i < m_playerInfoVec.size(); i++)
-      cout << "Player # " << i << " currPos = " << m_playerInfoVec[i].currPos << endl;
 
   showMaze();
 
@@ -578,9 +572,9 @@ int MazeRunner::getMyPosition(int dir, int playerId)
    
     int newPos = x*(2*m_mazeRow+1)+y;
 
-    if (abs(dir) % 2 == 0 && 
-        (m_playerInfoVec[playerId].currPos > 0 && dir < 0) ||
-        (m_playerInfoVec[playerId].currPos < 0 && dir > 0))
+    if ((abs(dir) % 2 == 0) &&  
+        ((m_playerInfoVec[playerId].currPos > 0 && dir < 0) ||
+        (m_playerInfoVec[playerId].currPos < 0 && dir > 0)))
     {
         newPos =  (m_playerInfoVec[playerId].currPos * -1);
     }
