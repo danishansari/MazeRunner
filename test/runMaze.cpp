@@ -113,7 +113,7 @@ int main(int argc, char**argv)
                 gamePassWord_g = password;
 
                 if (i == 0)
-                    //cout << "Runner:: Waiting for players.." << endl;
+                    cout << "Runner:: Waiting for players.." << endl;
                
                 gettimeofday(&tv_start, NULL);
 
@@ -125,7 +125,7 @@ int main(int argc, char**argv)
             }
             else // client
             {
-                //cout << "Runner:: trying to connect.." << endl;
+                cout << "Runner:: trying to connect.." << endl;
 
                 if (!socket_g->connect(ip, port))
                 {
