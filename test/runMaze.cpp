@@ -35,11 +35,16 @@ string gamePassWord_g = "admin";
 
 int main(int argc, char**argv)
 {
+    if (argc < 2) {
+        cout << argv[0] << " -u <*username> -pd <password> -i <ip> -p <port>" << endl;
+        return 0;
+    }
+
     string ip = "127.0.0.1";
     int port = 8000;
     string username = "unknown";
     string password = "admin";
-    int maxClient = 2;
+    int maxClient = 3;
     int connType = 1;
 
     for (int i = 1; i < argc; i+=2)
@@ -70,7 +75,7 @@ int main(int argc, char**argv)
     
     if (username == "unknown")
     {
-        //cout << "Provide User Name" << endl;
+        cout << "Provide User Name" << endl;
         return -1;
     }
     else if (maxClient > 2) // FIXME
@@ -125,11 +130,11 @@ int main(int argc, char**argv)
             }
             else // client
             {
-                //cout << "Runner:: trying to connect.." << endl;
+                cout << "Runner:: trying to connect.." << endl;
 
                 if (!socket_g->connect(ip, port))
                 {
-                    //cout << "Runner:: could not connect to: " << ip << endl;
+                    cout << "Runner:: could not connect to: " << ip << endl;
                     connected = 0;
                 }
                 else
@@ -186,13 +191,13 @@ int main(int argc, char**argv)
                         }
                         else
                         {
-                           //cout << "Runner:: Wrong Password!!" << endl;
+                           cout << "Runner:: Wrong Password!!" << endl;
                            connected = 0;
                         }
                     }
                     else
                     {
-                        //cout << "Runner:: Could not send data over socket!!" << endl;
+                        cout << "Runner:: Could not send data over socket!!" << endl;
                     }
                 }
             }
