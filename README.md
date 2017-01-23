@@ -1,7 +1,9 @@
 # MazeRunner
-Maze Puzzle 
+Maze Game
 
-Compile     : make clean
+
+
+Compile     : make clean;
               make
          
 Run(server) : ./bin/MazeRunner -u username 
